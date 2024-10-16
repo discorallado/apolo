@@ -1,0 +1,107 @@
+@import "/vendor/filament/filament/resources/css/theme.css";
+@import "/vendor/malzariey/filament-daterangepicker-filter/resources/css/filament-daterangepicker.css";
+@config 'tailwind.config.js';
+
+/* .fi-ta-cell > .py-4 {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+}
+.fi-sidebar-nav {
+    @apply overflow-hidden hover:overflow-scroll transition-all ease-in-out duration-300;
+} */
+/* .fi-sidebar-item > .gap-x-3 {
+    -moz-column-gap: 0.1rem !important;
+    column-gap: 0.1rem !important;
+}
+fi-sidebar-group-items
+.fi-sidebar-nav > .gap-y-7 {
+    -moz-row-gap: 0.25rem !important;
+    row-gap: 0.25rem !important;
+} */
+/* .fi-sidebar-nav {
+    @apply dark:bg-gray-800/25;
+}
+
+li.fi-sidebar-group.fi-active > .fi-sidebar-group-button {
+    @apply !text-blue-400;
+}
+.fi-sidebar-item:only-child {
+    @apply m-0 p-0 border-none;
+}
+.fi-sidebar-item {
+    @apply pl-0.5 border-l-2 border-gray-300 dark:border-gray-700 hover:border-blue-500 hover:dark:border-blue-500 transition-colors ease-in-out duration-200;
+}
+.fi-sidebar-group-items:nth-child(2) {
+    @apply bg-gray-100/25 dark:bg-gray-900/75 rounded-xl rounded-l-none ml-2;
+}
+.fi-sidebar-item-active {
+    @apply bg-none border-blue-500 dark:border-blue-500;
+} */
+
+.alert-success {
+    @apply flex items-center p-4 mb-4 gap-x-5 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400;
+}
+.alert-warning {
+    @apply flex items-center p-4 mb-4 gap-x-5 text-sm text-yellow-800 rounded-lg bg-yellow-50 dark:bg-gray-800 dark:text-yellow-400;
+}
+.alert-danger {
+    @apply flex items-center p-4 mb-4 gap-x-5 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400;
+}
+
+/* .pace {
+    -webkit-pointer-events: none;
+    pointer-events: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+.pace-inactive {
+    display: none;
+}
+
+.pace .pace-progress {
+    background: #3b82f6;
+    position: fixed;
+    z-index: 2000;
+    top: 0;
+    right: 100%;
+    width: 100%;
+    height: 2px;
+}
+.progress-bar {
+    @apply h-4 w-full bg-gray-100 dark:bg-gray-800 rounded-full shadow-inner overflow-hidden;
+}
+
+.progress-bar-value {
+    @apply flex h-full items-center justify-center bg-primary-600 dark:bg-primary-500 rounded-r-full shadow-inner text-xs font-bold text-white;
+} */
+
+::-webkit-scrollbar {
+    height: 5px;
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #e5e7eb;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #c9cbcd;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #101215;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: #1f2126;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: #1a1d21;
+}
