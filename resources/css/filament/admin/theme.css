@@ -1,23 +1,23 @@
-/* @import "/vendor/filament/filament/resources/css/theme.css"; */
+/* @import '/vendor/filament/filament/resources/css/theme.css'; */
 @import "/vendor/malzariey/filament-daterangepicker-filter/resources/css/filament-daterangepicker.css";
 @config 'tailwind.config.js';
 
-/* .fi-ta-cell > .py-4 {
+
+
+.fi-ta-cell > .py-4 {
     padding-top: 0.25rem !important;
     padding-bottom: 0.25rem !important;
-} */
+}
 .fi-sidebar-nav {
     @apply overflow-hidden hover:overflow-scroll transition-all ease-in-out duration-300;
 }
 /* .fi-sidebar-item > .gap-x-3 {
     -moz-column-gap: 0.1rem !important;
     column-gap: 0.1rem !important;
-}
-fi-sidebar-group-items
-.fi-sidebar-nav > .gap-y-7 {
-    -moz-row-gap: 0.25rem !important;
-    row-gap: 0.25rem !important;
 } */
+.fi-sidebar-group-items {
+    @apply !gap-y-0;
+}
 .fi-sidebar-nav {
     @apply dark:bg-gray-800/25;
 }
