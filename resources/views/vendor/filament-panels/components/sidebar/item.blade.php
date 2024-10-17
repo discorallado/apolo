@@ -128,7 +128,7 @@
         @endif
     </a>
 
-    @if ($childItems)
+    @if (($active || $activeChildItems) && $childItems)
         <ul class="fi-sidebar-sub-group-items flex flex-col gap-y-1">
             @foreach ($childItems as $childItem)
                 <x-filament-panels::sidebar.item

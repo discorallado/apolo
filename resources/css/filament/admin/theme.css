@@ -1,14 +1,14 @@
-@import "/vendor/filament/filament/resources/css/theme.css";
+/* @import "/vendor/filament/filament/resources/css/theme.css"; */
 @import "/vendor/malzariey/filament-daterangepicker-filter/resources/css/filament-daterangepicker.css";
 @config 'tailwind.config.js';
 
 /* .fi-ta-cell > .py-4 {
     padding-top: 0.25rem !important;
     padding-bottom: 0.25rem !important;
-}
+} */
 .fi-sidebar-nav {
     @apply overflow-hidden hover:overflow-scroll transition-all ease-in-out duration-300;
-} */
+}
 /* .fi-sidebar-item > .gap-x-3 {
     -moz-column-gap: 0.1rem !important;
     column-gap: 0.1rem !important;
@@ -18,7 +18,7 @@ fi-sidebar-group-items
     -moz-row-gap: 0.25rem !important;
     row-gap: 0.25rem !important;
 } */
-/* .fi-sidebar-nav {
+.fi-sidebar-nav {
     @apply dark:bg-gray-800/25;
 }
 
@@ -36,7 +36,7 @@ li.fi-sidebar-group.fi-active > .fi-sidebar-group-button {
 }
 .fi-sidebar-item-active {
     @apply bg-none border-blue-500 dark:border-blue-500;
-} */
+}
 
 .alert-success {
     @apply flex items-center p-4 mb-4 gap-x-5 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400;
