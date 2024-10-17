@@ -8,15 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Tags\HasTags;
 
-class Proyect extends Model
+class Proyect extends Model implements HasMedia
 {
+
+    use InteractsWithMedia;
     use HasFactory;
     use SoftDeletes;
     use HasTags;
 
     protected $table = 'man_proyectos';
+
     protected $fillable = [
         'titulo',
         'detalle',
@@ -28,6 +33,9 @@ class Proyect extends Model
         'estado',
     ];
 
+    protected $casts = [
+        'proyect_files' => 'array',
+    ];
     public function movements(): HasMany
     {
         return $this->hasMany(Movement::class, 'id_proyecto');

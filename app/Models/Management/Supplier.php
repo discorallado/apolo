@@ -10,9 +10,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Supplier extends Model
+class Supplier extends Model implements HasMedia
 {
+
+    use InteractsWithMedia;
 	use HasFactory;
 	use SoftDeletes;
 

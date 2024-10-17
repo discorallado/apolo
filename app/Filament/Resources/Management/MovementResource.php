@@ -197,6 +197,7 @@ class MovementResource extends Resource
 
                                 SpatieMediaLibraryFileUpload::make('movement_files')
                                     ->label('Archivos')
+                                    ->collection('movimientos')
                                     ->multiple()
                                     ->openable()
                                     ->downloadable()

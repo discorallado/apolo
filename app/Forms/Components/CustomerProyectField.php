@@ -60,7 +60,7 @@ class CustomerProyectField extends Field
                     //     ->schema([
                     Forms\Components\Select::make('id_cliente')
                         ->label('Cliente')
-                        ->required()
+                        ->required($this->isRequired())
                         ->options(Customer::query()->pluck('nombre', 'id'))
                         ->live()
                         ->hintAction(
@@ -73,7 +73,7 @@ class CustomerProyectField extends Field
 
                     Forms\Components\Select::make('id')
                         ->label('Proyecto')
-                        ->required()
+                        ->required($this->isRequired())
                         ->live()
                         ->hidden(fn(Get $get): Bool => $get('id_cliente') === null)
                         ->options(fn(Get $get): Collection => Proyect::query()

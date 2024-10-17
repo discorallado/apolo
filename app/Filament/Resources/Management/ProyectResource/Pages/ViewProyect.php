@@ -1,27 +1,20 @@
 <?php
 
-namespace App\Filament\Resources\Management\ProyectResource\Pages;
+namespace App\Filament\Resources\Management\PurchaseResource\Pages;
 
-use App\Filament\Resources\Management\ProyectResource;
+use App\Filament\Resources\Management\PurchaseResource;
 use Filament\Actions;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
-class ViewProyect extends ViewRecord
+class ViewProyect extends Infolist
 {
-    protected static string $resource = ProyectResource::class;
+    protected static string $resource = PurchaseResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
             Actions\EditAction::make(),
-            Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
         ];
     }
-
-    // public function hasCombinedRelationManagerTabsWithContent(): bool
-    // {
-    //     return true;
-    // }
 }

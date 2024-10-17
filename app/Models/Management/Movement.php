@@ -14,9 +14,9 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Movement extends Model implements HasMedia
 {
 
+    use InteractsWithMedia;
     use HasFactory;
     use SoftDeletes;
-    use InteractsWithMedia;
 
     protected $table = 'man_movimientos';
 

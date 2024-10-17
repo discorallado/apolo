@@ -9,8 +9,10 @@ use App\Filament\Resources\Management\ProyectResource\RelationManagers\SalesRela
 use App\Models\Management\Movement;
 use App\Models\Management\Proyect;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\SpatieTagsInput;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid;
 use Filament\Resources\Resource;
 use Filament\Support\Enums\ActionSize;
 use Filament\Support\Enums\IconPosition;
@@ -25,6 +27,13 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 use Pelmered\FilamentMoneyField\Forms\Components\MoneyInput;
 use Pelmered\FilamentMoneyField\Tables\Columns\MoneyColumn;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\SpatieTagsEntry;
+use Filament\Infolists\Components\Split;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Support\Enums\FontWeight;
+use Pelmered\FilamentMoneyField\Infolists\Components\MoneyEntry;
 
 class ProyectResource extends Resource
 {
@@ -47,6 +56,96 @@ class ProyectResource extends Resource
         return 'proyecto ' . $record?->titulo;
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(3)
+            ->schema([
+                // Split::make([
+                Grid::make(1)
+                    ->columnSpan(2)
+                    ->schema([
+                        Section::make('Datos del proyecto')
+                            ->schema([
+                                TextEntry::make('titulo')
+                                    ->columnSpan(2),
+                                TextEntry::make('customer.nombre')
+                                    ->label('Cliente')
+                                    ->columnSpan(1),
+                                MoneyEntry::make('monto_proyectado')
+                                    ->columnSpan(1),
+
+                                TextEntry::make('detalle')
+                                    // ->columnSpanFull()
+                                    ->columnSpan(2),
+                                SpatieTagsEntry::make('tags')
+                                    // ->columnSpanFull()
+                                    ->columnSpan(2),
+                            ])
+                            ->columns(2)
+                            ->columnSpan(2),
+                        Section::make('Financieros')
+                            ->schema([
+                                MoneyEntry::make('cargos')
+                                    ->state(function (Model $record): float {
+                                        return $record->movements->sum('cargo');
+                                    })
+                                    ->columnSpan(1),
+                                MoneyEntry::make('ingresos')
+                                    ->state(function (Model $record): float {
+                                        return $record->movements->sum('ingreso');
+                                    })
+                                    ->columnSpan(1),
+                                MoneyEntry::make('deuda')
+                                    ->state(function (Model $record): float {
+                                        return $record->movements->sum('cargo') - $record->movements->sum('ingreso');
+                                    })
+                                    ->columnSpan(1),
+                            ])
+                            ->columns(3)
+                            ->columnSpan(2),
+
+                    ]),
+                Grid::make(1)
+                    ->columnSpan(1)
+                    ->schema([
+                        Section::make('Información del registro')
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Creado'),
+                                TextEntry::make('updated_at')
+                                    ->label('Última modificación'),
+                                TextEntry::make('user.name')
+                                    ->icon('heroicon-s-user'),
+                            ]),
+                        Section::make('Estado del proyecto')
+                            ->schema([
+                                TextEntry::make('estado')
+                                    ->label(false)
+                                    ->size('medium')
+                                    ->extraAttributes(['class' => 'items-center'])
+                                    ->color(fn(bool $state) => $state ? 'success' : 'warning')
+                                    ->formatStateUsing(fn(bool $state) => $state ? 'Proyecto finalizado' : 'Proyecto activo'),
+                            ]),
+                        Section::make('Documentos Tributarios')
+                            ->schema([
+                                TextEntry::make('sales')
+                                    ->label('Facturas emitidas')
+                                    ->state(function (Model $record): float {
+                                        return $record->sales->count();
+                                    })
+                                    ->suffix(' (facturas)'),
+                                TextEntry::make('purchases')
+                                    ->label('Facturas de compras')
+                                    ->state(function (Model $record): float {
+                                        return $record->purchases->count();
+                                    })
+                                    ->suffix(' (facturas)'),
+                            ]),
+                    ]),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -54,16 +153,6 @@ class ProyectResource extends Resource
                 Forms\Components\Section::make('Detalles')
                     ->columns(2)
                     ->schema([
-                        // TextColumn::make('index')->state(
-                        //     static function (HasTable $livewire, stdClass $rowLoop): string {
-                        //         return (string) (
-                        //             $rowLoop->iteration +
-                        //             ($livewire->getTableRecordsPerPage() * (
-                        //                 $livewire->getTablePage() - 1
-                        //             ))
-                        //         );
-                        //     }
-                        // ),
                         Forms\Components\TextInput::make('titulo')
                             ->required()
                             ->maxLength(255)
@@ -75,10 +164,6 @@ class ProyectResource extends Resource
                             ->required()
                             ->columnSpan(1),
                         MoneyInput::make('monto_proyectado')
-                            // ->extraInputAttributes(['oninput' => 'this.value = parseInt(this.value.replace(/[^\d]/, "")).toLocaleString(\'es-CL\')'])
-                            // ->stripCharacters('.')
-                            // // ->numeric()
-                            // ->prefix('$')
                             ->columnSpan(1),
 
                         Forms\Components\Textarea::make('detalle')
@@ -88,14 +173,14 @@ class ProyectResource extends Resource
                             ->type('proyectos')
                             ->columnSpanFull()
                             ->columnSpan(2),
+                        SpatieMediaLibraryFileUpload::make('proyect_files'),
                     ])
                     ->columnSpan(['lg' => fn(?Proyect $record) => $record === null ? 3 : 2]),
 
                 Forms\Components\Grid::make(1)
                     ->columnSpan(1)
                     ->schema([
-                        Forms\Components\Section::make('Metadatos')
-                            ->description('Información del registro')
+                        Forms\Components\Section::make('Información del registro')
                             ->schema([
                                 Forms\Components\Placeholder::make('created_at')
                                     ->label('Creado')
@@ -110,16 +195,9 @@ class ProyectResource extends Resource
                             ->columnSpan(['lg' => 1]),
                         Forms\Components\Section::make('Estado del proyecto')
                             ->schema([
-                                // Forms\Components\Toggle::make('estado')
-                                //     ->label('Pagado')
-                                //     ->inline()
-                                //     ->inlineLabel()
-                                //     ->required(),
                                 Forms\Components\Select::make('estado')
                                     ->options([1 => 'Finalizado', 0 => 'Activo'])
-                                    ->label('Pagado')
-                                    // ->inline()
-                                    // ->inlineLabel()
+                                    ->label(false)
                                     ->required(),
                             ])
                             ->columnSpan(['lg' => 1]),
@@ -310,11 +388,11 @@ class ProyectResource extends Resource
                                 Forms\Components\Grid::make(3)
                                     ->schema([
                                         Forms\Components\Placeholder::make('cargos')
-                                        ->content('$' . number_format($relatedCargos, 0, 0, '.')),
+                                            ->content('$' . number_format($relatedCargos, 0, 0, '.')),
                                         Forms\Components\Placeholder::make('ingresos')
-                                        ->content('$' . number_format($relatedIngresos, 0, 0, '.')),
+                                            ->content('$' . number_format($relatedIngresos, 0, 0, '.')),
                                         Forms\Components\Placeholder::make('deuda')
-                                        ->content('$' . number_format($diff, 0, 0, '.')),
+                                            ->content('$' . number_format($diff, 0, 0, '.')),
                                     ]),
                                 Forms\Components\ViewField::make('mensaje')
                                     ->view('forms.components.aviso')

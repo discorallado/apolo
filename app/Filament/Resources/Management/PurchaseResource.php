@@ -67,6 +67,7 @@ class PurchaseResource extends Resource
 
                         CustomerProyectField::make('proyect_data')
                             ->relationship('proyect')
+                            // ->required()
                             ->label(false)
                             ->columnSpanFull()
                             ->hiddenOn(MovementsRelationManager::class),
