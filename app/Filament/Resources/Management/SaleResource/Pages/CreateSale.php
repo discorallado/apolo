@@ -13,10 +13,8 @@ class CreateSale extends CreateRecord
 
 	protected function mutateFormDataBeforeCreate(array $data): array
 	{
+		dd($data);
 		$data['user_id'] = auth()->id();
-		$data['periodo'] = date('m', strtotime($data['fecha_dcto']));
-		$data['ano'] = date('y', strtotime($data['fecha_dcto']));
-
 		return $data;
 	}
 }

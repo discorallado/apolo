@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Management\SaleResource\Pages;
 
+use App\Filament\Imports\Management\SaleImporter;
 use App\Filament\Resources\Management\SaleResource;
 use App\Filament\Resources\Management\SaleResource\Widgets\SaleStatsWidget;
 use Filament\Actions;
@@ -15,6 +16,8 @@ class ListSales extends ListRecords
 	{
 		return [
 			Actions\CreateAction::make(),
+            Actions\ImportAction::make()
+			->importer(SaleImporter::class),
 		];
 	}
 

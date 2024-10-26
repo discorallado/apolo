@@ -187,7 +187,7 @@ class MovementResource extends Resource
                                     ->disabled(fn(Get $get) => $get('tipo_factura') != 'numero'),
 
                                 Forms\Components\Textarea::make('detalle')
-                                    ->required()
+                                    // ->required()
                                     ->columnSpanFull(),
 
                             ]),

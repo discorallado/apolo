@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Filament\Resources\Management\PurchaseResource\Pages;
+namespace App\Filament\Resources\Management\ProyectResource\Pages;
 
 use App\Filament\Resources\Management\PurchaseResource;
 use Filament\Actions;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
-class ViewProyect extends Infolist
+class ViewProyect extends ViewRecord
 {
     protected static string $resource = PurchaseResource::class;
 

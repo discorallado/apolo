@@ -16,9 +16,10 @@ class CreateMovement extends CreateRecord
             $data['factura'] = $data['tipo_factura'];
         }
         $data['id_proyecto'] = $data['proyect_data']['id'];
+        // $data['id_proyecto'] = $data['proyect_data']['id'];
         unset($data['proyect_data']);
         unset($data['tipo_factura']);
-        unset($data['cliente']);
+
         $data['user_id'] = auth()->id();
         return $data;
     }

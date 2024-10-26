@@ -44,8 +44,6 @@ class PurchaseResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'fecha_dcto';
 
-    // protected static ?string $navigationParentItem = 'Ventas/Pagos';
-
     protected static ?string $navigationGroup = 'Gestión';
 
     protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
@@ -53,8 +51,6 @@ class PurchaseResource extends Resource
     public static function getRecordTitle(?Model $record): string|Htmlable|null
     {
         return 'compra #' . $record?->folio . ' del ' . $record?->fecha_dcto;
-        // dd(static::getModelLabel());
-        // // ) ?? static::getModelLabel();
     }
 
     public static function form(Form $form): Form
