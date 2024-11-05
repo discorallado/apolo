@@ -8,11 +8,16 @@ use App\Models\Management\Supplier;
 use App\Settings\GeneralSettings;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class SupplierResource extends Resource
@@ -21,7 +26,7 @@ class SupplierResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
-    protected static ?string $slug = 'man/proveedores';
+    protected static ?string $slug = 'proveedores';
 
     protected static ?string $modelLabel = 'Proveedor';
 
@@ -32,6 +37,76 @@ class SupplierResource extends Resource
     protected static ?string $navigationGroup = 'Gestión';
 
     protected static ?string $navigationIcon = 'heroicon-o-building-storefront';
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(3)
+            ->schema([
+                Grid::make(1)
+                    ->columnSpan(2)
+                    ->schema([
+                        Section::make('Detalles')
+                            ->icon('heroicon-o-document-magnifying-glass')
+                            ->description('Indique datos de identificación')
+                            ->schema([
+                                TextEntry::make('nombre')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(1),
+                                TextEntry::make('rut')
+                                    ->placeholder('sin registro.')
+                                    ->state(function (string $state) {
+                                        // $state = explode('-', $state);
+                                        // $state[0] = number_format($state[0], 0, '', '.');
+                                        // return implode('-', $state);
+                                        return $state;
+                                    })
+                                    ->columnSpan(1),
+                                TextEntry::make('giro')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(2),
+                            ])
+                            ->columns(2)
+                            ->columnSpan(2),
+                        Section::make('Contacto')
+                            ->icon('heroicon-o-user-circle')
+                            ->description('Indique datos de contacto')
+                            ->columns(2)
+                            ->columnSpan(2)
+                            ->schema([
+                                TextEntry::make('direccion')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(2),
+                                TextEntry::make('ciudad')
+                                    ->placeholder('sin registro.')
+                                    // ->options(collect(app(GeneralSettings::class)->comunas)->all())
+                                    ->columnSpan(1),
+                                TextEntry::make('telefono')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(1)
+                                    ->prefix('+56'),
+                            ]),
+                    ]),
+                Grid::make(1)
+                    ->columnSpan(1)
+                    ->schema([
+                        Section::make('Contacto')
+                            ->icon('heroicon-s-information-circle')
+                            ->description('Información de los datos')
+                            ->columns(1)
+                            ->columnSpan(1)
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Created at')
+                                    ->state(fn(Supplier $record): ?string => $record->created_at?->diffForHumans()),
+
+                                TextEntry::make('updated_at')
+                                    ->label('Last modified at')
+                                    ->state(fn(Supplier $record): string => ($record->updated_at ? $record->updated_at->diffForHumans() : 'Sin modificaciones')),
+                            ])
+                    ]),
+            ]);
+    }
 
     public static function form(Form $form): Form
     {
@@ -78,20 +153,7 @@ class SupplierResource extends Resource
                                     ->maxLength(50),
 
                             ])
-                    ])->columnSpan(['lg' => fn(?Supplier $record) => $record === null ? 3 : 2]),
-
-                Forms\Components\Section::make()
-                    ->schema([
-                        Forms\Components\Placeholder::make('created_at')
-                            ->label('Created at')
-                            ->content(fn(Supplier $record): ?string => $record->created_at?->diffForHumans()),
-
-                        Forms\Components\Placeholder::make('updated_at')
-                            ->label('Last modified at')
-                            ->content(fn(Supplier $record): string => ($record->updated_at ? $record->updated_at->diffForHumans() : 'Sin modificaciones')),
-                    ])
-                    ->columnSpan(['lg' => 1])
-                    ->hidden(fn(?Supplier $record) => $record === null),
+                    ]),
             ])
             ->columns(3);
     }
@@ -101,7 +163,10 @@ class SupplierResource extends Resource
         return $table
             ->paginationPageOptions([25, 50, 100, 200, 'all'])
             ->defaultPaginationPageOption(50)
-            ->defaultSort('nombre', 'asc')
+            // ->defaultSort('nombre', 'asc')
+            ->recordUrl(
+                fn(Model $record): string => SupplierResource::getUrl('view', [$record->id]),
+            )
             ->columns([
                 Tables\Columns\TextColumn::make('rut')
                     ->formatStateUsing(function (string $state) {
@@ -157,12 +222,12 @@ class SupplierResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\ActionGroup::make([
+                // Tables\Actions\ActionGroup::make([
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),
                     Tables\Actions\ForceDeleteAction::make(),
                     Tables\Actions\RestoreAction::make(),
-                ]),
+                // ]),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -186,10 +251,11 @@ class SupplierResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSuppliers::route('/'),
-            'create' => Pages\CreateSupplier::route('/create'),
+            // 'index' => Pages\ListSuppliers::route('/'),
+            'index' => Pages\ManageSuppliers::route('/'),
+            // 'create' => Pages\CreateSupplier::route('/create'),
             'view' => Pages\ViewSupplier::route('/{record}'),
-            'edit' => Pages\EditSupplier::route('/{record}/edit'),
+            // 'edit' => Pages\EditSupplier::route('/{record}/edit'),
         ];
     }
 

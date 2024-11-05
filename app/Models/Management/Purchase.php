@@ -36,6 +36,7 @@ class Purchase extends Model implements HasMedia
         'neto',
         'iva',
         'tolal',
+        'user_id',
         // 'periodo',
         // 'ano',
     ];

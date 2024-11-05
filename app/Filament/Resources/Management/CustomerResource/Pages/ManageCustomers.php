@@ -4,16 +4,16 @@ namespace App\Filament\Resources\Management\CustomerResource\Pages;
 
 use App\Filament\Resources\Management\CustomerResource;
 use Filament\Actions;
-use Filament\Resources\Pages\ViewRecord;
+use Filament\Resources\Pages\ManageRecords;
 
-class ViewCustomer extends ViewRecord
+class ManageCustomers extends ManageRecords
 {
     protected static string $resource = CustomerResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            Actions\CreateAction::make(),
         ];
     }
 }

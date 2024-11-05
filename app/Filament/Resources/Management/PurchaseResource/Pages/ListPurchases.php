@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Management\PurchaseResource\Pages;
 
+use App\Filament\Imports\Management\PurchaseImporter;
 use App\Filament\Resources\Management\PurchaseResource;
 use App\Filament\Resources\Management\PurchaseResource\Widgets\PurchaseStatsWidget;
 use Filament\Actions;
@@ -15,6 +16,11 @@ class ListPurchases extends ListRecords
 	{
 		return [
 			Actions\CreateAction::make(),
+			Actions\ImportAction::make()
+			->label('Importar compras SII')
+			->color('warning')
+			->modalDescription(null)
+			->importer(PurchaseImporter::class),
 		];
 	}
 

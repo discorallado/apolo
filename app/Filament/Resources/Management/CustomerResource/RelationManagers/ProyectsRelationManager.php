@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Management\CustomerResource\RelationManagers;
 
+use App\Filament\Resources\Management\CustomerResource;
 use App\Filament\Resources\Management\ProyectResource;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -9,6 +10,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProyectsRelationManager extends RelationManager
@@ -28,7 +30,19 @@ class ProyectsRelationManager extends RelationManager
 
     public function table(Table $table): Table
     {
-        return ProyectResource::table($table);
+        return ProyectResource::table($table)
+            ->recordUrl(
+                fn(Model $record): string => ProyectResource::getUrl('view', [$record->id]),
+            )
+            ->actions([
+                Tables\Actions\ActionGroup::make([
+                Tables\Actions\ViewAction::make(),
+                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\ForceDeleteAction::make(),
+                    Tables\Actions\RestoreAction::make(),
+                ])
+            ]);
 
         // return $table
         //     ->recordTitleAttribute('titulo')

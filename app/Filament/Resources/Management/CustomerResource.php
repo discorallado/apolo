@@ -10,12 +10,17 @@ use App\Settings\GeneralSettings;
 use Filament\Tables\Actions\Action;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
@@ -25,7 +30,7 @@ class CustomerResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $slug = 'man/clientes';
+    protected static ?string $slug = 'clientes';
 
     protected static ?string $modelLabel = 'cliente';
 
@@ -37,73 +42,118 @@ class CustomerResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-users';
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(3)
+            ->schema([
+                Grid::make(1)
+                    ->columnSpan(2)
+                    ->schema([
+                        Section::make('Detalles')
+                            ->icon('heroicon-o-document-magnifying-glass')
+                            ->description('Indique datos de identificación')
+                            ->schema([
+                                TextEntry::make('nombre')
+                                    ->columnSpan(2),
+                                TextEntry::make('rut')
+                                    ->placeholder('sin rut.')
+                                    ->columnSpan(1),
+                                TextEntry::make('giro')
+                                    ->placeholder('sin registro.')
+                                    // ->columnSpanFull()
+                                    ->columnSpan(2),
+                            ])
+                            ->columns(2)
+                            ->columnSpan(2),
+                        Section::make('Contacto')
+                            ->icon('heroicon-o-user-circle')
+                            ->description('Indique datos de contacto')
+                            ->columns(2)
+                            ->columnSpan(2)
+                            ->schema([
+                                TextEntry::make('direccion')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(2),
+                                TextEntry::make('ciudad')
+                                    ->placeholder('sin registro.')
+                                    // ->options(collect(app(GeneralSettings::class)->comunas)->all())
+                                    ->columnSpan(1),
+                                TextEntry::make('telefono')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(1)
+                                    ->prefix('+56'),
+                            ]),
+                    ]),
+                Grid::make(1)
+                    ->columnSpan(1)
+                    ->schema([
+                        Section::make('Contacto')
+                            ->icon('heroicon-s-information-circle')
+                            ->description('Información de los datos')
+                            ->columns(1)
+                            ->columnSpan(1)
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Created at')
+                                    ->state(fn(Model $record): ?string => $record->created_at ? $record->created_at->diffForHumans() : 'null'),
+
+                                TextEntry::make('updated_at')
+                                    ->label('Last modified at')
+                                    ->state(fn(Model $record): string => ($record->updated_at ? $record->updated_at->diffForHumans() : 'Sin modificaciones')),
+                            ])
+                    ]),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Grid::make(1)
+                // Forms\Components\Grid::make(1)
+                //     ->schema([
+                Forms\Components\Section::make('Detalles')
+                    ->icon('heroicon-o-document-magnifying-glass')
+                    ->description('Indique datos de identificación')
+                    ->columns(2)
                     ->schema([
-                        Forms\Components\Section::make('Detalles')
-                            ->icon('heroicon-o-document-magnifying-glass')
-                            ->description('Indique datos de identificación')
-                            ->columns(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('nombre')
-                                    ->columnSpan(1)
-                                    ->required()
-                                    ->maxLength(255),
-                                Forms\Components\TextInput::make('rut')
-                                    ->mask('99.999.999-*')
-                                    ->placeholder('12.345.678-9')
-                                    ->columnSpan(1)
-                                    ->maxLength(21),
-                                Forms\Components\TextInput::make('giro')
-                                    ->columnSpan(2)
-                                    ->maxLength(65535)
-                                    ->columnSpanFull(),
-                            ]),
-                        Forms\Components\Section::make('Contacto')
-                            ->icon('heroicon-o-user-circle')
-                            ->description('Indique datos de contacto')
-                            ->columns(2)
-                            ->schema([
-                                Forms\Components\TextInput::make('direccion')
-                                    ->columnSpan(2)
-                                    ->maxLength(65535)
-                                    ->columnSpanFull(),
-                                Forms\Components\Select::make('ciudad')
-                                    ->options(collect(app(GeneralSettings::class)->comunas)->all())
-                                    ->searchable()
-                                    ->live()
-                                    ->columnSpan(1),
-                                Forms\Components\TextInput::make('telefono')
-                                    ->columnSpan(1)
-                                    ->prefix('+56')
-                                    ->tel()
-                                    ->maxLength(50),
-
-                            ])
-                    ])
-
-                    ->columnSpan(['lg' => fn(?Customer $record) => $record === null ? 3 : 2]),
-
-                Forms\Components\Section::make()
-                    ->description('Información de los datos')
-                    ->icon('heroicon-s-information-circle')
+                        Forms\Components\TextInput::make('nombre')
+                            ->columnSpan(1)
+                            ->required()
+                            ->maxLength(255),
+                        Forms\Components\TextInput::make('rut')
+                            ->mask('99.999.999-*')
+                            ->placeholder('12.345.678-9')
+                            ->columnSpan(1)
+                            ->maxLength(21),
+                        Forms\Components\TextInput::make('giro')
+                            ->columnSpan(2)
+                            ->maxLength(65535)
+                            ->columnSpanFull(),
+                    ]),
+                Forms\Components\Section::make('Contacto')
+                    ->icon('heroicon-o-user-circle')
+                    ->description('Indique datos de contacto')
+                    ->columns(2)
                     ->schema([
-                        Forms\Components\Placeholder::make('created_at')
-                            ->label('Created at')
-                            ->content(fn(Customer $record): ?string => $record->created_at?->diffForHumans()),
-
-                        Forms\Components\Placeholder::make('updated_at')
-                            ->label('Last modified at')
-                            ->content(fn(Customer $record): string => ($record->updated_at ? $record->updated_at->diffForHumans() : 'Sin modificaciones')),
+                        Forms\Components\TextInput::make('direccion')
+                            ->columnSpan(2)
+                            ->maxLength(65535)
+                            ->columnSpanFull(),
+                        Forms\Components\Select::make('ciudad')
+                            ->options(collect(app(GeneralSettings::class)->comunas)->all())
+                            ->searchable()
+                            ->live()
+                            ->columnSpan(1),
+                        Forms\Components\TextInput::make('telefono')
+                            ->columnSpan(1)
+                            ->prefix('+56')
+                            ->tel()
+                            ->maxLength(50),
 
                     ])
-                    ->columnSpan(['lg' => 1])
-                    ->hidden(fn(?Customer $record) => $record === null),
-            ])
-            ->columns(3);
+                // ]),
+            ]);
     }
 
     public static function table(Table $table): Table
@@ -111,15 +161,18 @@ class CustomerResource extends Resource
         return $table
             ->paginationPageOptions([25, 50, 100, 200, 'all'])
             ->defaultPaginationPageOption(50)
-            ->defaultSort('nombre', 'desc')
+            // ->defaultSort('nombre', 'desc')
+            ->recordUrl(
+                fn(Model $record): string => CustomerResource::getUrl('view', [$record->id]),
+            )
             ->columns([
                 Tables\Columns\TextColumn::make('rut')
                     ->formatStateUsing(function (string $state) {
                         $state = explode('-', $state);
-                        $state[0] = number_format($state[0], 0, '', '.');
+                        $state[0] = number_format((int)$state[0], 0, '', '.');
                         return implode('-', $state);
                     })
-                    ->copyable()
+                    // ->copyable()
                     ->placeholder('Sin rut.')
                     ->sortable()
                     ->searchable(),
@@ -127,7 +180,7 @@ class CustomerResource extends Resource
                 Tables\Columns\TextColumn::make('nombre')
                     ->searchable()
                     ->limit(40)
-                    ->copyable()
+                    // ->copyable()
                     ->searchable()
                     ->numeric()
                     ->tooltip(function (TextColumn $column): ?string {
@@ -139,6 +192,7 @@ class CustomerResource extends Resource
                     })
                     ->sortable(),
                 Tables\Columns\ViewColumn::make('ciudad')
+                    // Tables\Columns\TextColumn::make('ciudad')
                     ->view('tables.columns.city-column')
                     ->placeholder('Sin registro.')
                     ->sortable()
@@ -146,7 +200,7 @@ class CustomerResource extends Resource
 
                 Tables\Columns\TextColumn::make('telefono')
                     ->placeholder('Sin registro.')
-                    ->copyable()
+                    // ->copyable()
                     ->sortable()
                     ->searchable(),
 
@@ -186,6 +240,7 @@ class CustomerResource extends Resource
                     ->label('Filtrar'),
             )
             ->actions([
+                // Tables\Actions\ViewAction::make(),
                 // Tables\Actions\ActionGroup::make([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -212,10 +267,10 @@ class CustomerResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListCustomers::route('/'),
-            'create' => Pages\CreateCustomer::route('/create'),
+            'index' => Pages\ManageCustomers::route('/'),
+            // 'create' => Pages\CreateCustomer::route('/create'),
             'view' => Pages\ViewCustomer::route('/{record}'),
-            'edit' => Pages\EditCustomer::route('/{record}/edit'),
+            // 'edit' => Pages\EditCustomer::route('/{record}/edit'),
         ];
     }
 

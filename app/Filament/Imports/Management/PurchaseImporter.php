@@ -2,15 +2,15 @@
 
 namespace App\Filament\Imports\Management;
 
-use App\Models\Management\Sale;
+use App\Models\Management\Purchase;
 use Carbon\Carbon;
 use Filament\Actions\Imports\ImportColumn;
 use Filament\Actions\Imports\Importer;
 use Filament\Actions\Imports\Models\Import;
 
-class SaleImporter extends Importer
+class PurchaseImporter extends Importer
 {
-    protected static ?string $model = Sale::class;
+    protected static ?string $model = Purchase::class;
 
     public static function getColumns(): array
     {
@@ -49,7 +49,7 @@ class SaleImporter extends Importer
         ];
     }
 
-    public function resolveRecord(): ?Sale
+    public function resolveRecord(): ?Purchase
     {
         // return Sale::firstOrNew([
         //     // Update existing records, matching them by `$this->data['column_name']`
@@ -57,13 +57,13 @@ class SaleImporter extends Importer
         // ]);
         $this->data['fecha_dcto'] = Carbon::parse($this->data['fecha_dcto'])->format('Y-m-d');
         $this->data['user_id'] = "1";
-        dd($this->data);
-        return new Sale();
+        // dd($this->data);
+        return new Purchase();
     }
 
     public static function getCompletedNotificationBody(Import $import): string
     {
-        $body = 'Your sale import has completed and ' . number_format($import->successful_rows) . ' ' . str('row')->plural($import->successful_rows) . ' imported.';
+        $body = 'Your purchase import has completed and ' . number_format($import->successful_rows) . ' ' . str('row')->plural($import->successful_rows) . ' imported.';
 
         if ($failedRowsCount = $import->getFailedRowsCount()) {
             $body .= ' ' . number_format($failedRowsCount) . ' ' . str('row')->plural($failedRowsCount) . ' failed to import.';

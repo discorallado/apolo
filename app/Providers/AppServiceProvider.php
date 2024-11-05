@@ -44,8 +44,8 @@ class AppServiceProvider extends ServiceProvider
             }
         </script>"),
         );
-        FilamentAsset::register([
-            Js::make('main', __DIR__ . '/../../resources/js/main.js'),
-        ]);
+        // FilamentAsset::register([
+        //     Js::make('main', __DIR__ . '/../../resources/js/main.js'),
+        // ]);
     }
 }

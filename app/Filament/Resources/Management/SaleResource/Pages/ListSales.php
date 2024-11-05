@@ -17,6 +17,9 @@ class ListSales extends ListRecords
 		return [
 			Actions\CreateAction::make(),
             Actions\ImportAction::make()
+			->label('Importar ventas SII')
+			->color('warning')
+			->modalDescription(null)
 			->importer(SaleImporter::class),
 		];
 	}

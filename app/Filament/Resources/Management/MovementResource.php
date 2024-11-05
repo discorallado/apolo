@@ -36,7 +36,7 @@ class MovementResource extends Resource
 
     protected static ?string $slug = 'movimientos';
 
-    protected static ?string $modelLabel = 'Venta/Pago';
+    protected static ?string $modelLabel = 'Movimientos';
 
     protected static ?string $pluralModelLabel = 'Ventas/Pagos';
 

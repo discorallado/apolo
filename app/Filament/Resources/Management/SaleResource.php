@@ -33,7 +33,7 @@ class SaleResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
-    protected static ?string $slug = 'man/ventas';
+    protected static ?string $slug = 'ventas';
 
     protected static ?string $modelLabel = 'Venta';
 
@@ -89,10 +89,10 @@ class SaleResource extends Resource
 
                         Forms\Components\Section::make('Montos')
                             ->icon('heroicon-s-currency-dollar')
-                            ->description('Indique solo el monto excento y el neto de la venta.')
+                            ->description('Indique solo el monto exento y el neto de la venta.')
                             ->columns(2)
                             ->schema([
-                                Forms\Components\TextInput::make('excento')
+                                Forms\Components\TextInput::make('exento')
                                     ->numeric()
                                     ->prefix('$')
                                     ->required()
@@ -115,7 +115,7 @@ class SaleResource extends Resource
                                     ->live(debounce: 500)
                                     ->afterStateUpdated(function (Get $get, Set $set, $state) {
                                         $set('iva', round($state * 0.19, 0));
-                                        $set('total', $state + round($state * 0.19, 0) + $get('excento'));
+                                        $set('total', $state + round($state * 0.19, 0) + $get('exento'));
                                     }),
                                 Forms\Components\TextInput::make('total')
                                     ->numeric()

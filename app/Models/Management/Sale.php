@@ -32,10 +32,11 @@ class Sale extends Model implements HasMedia
         'id_proyecto',
         'id_cliente',
         'id_movimiento',
-        'excento',
+        'exento',
         'neto',
         'iva',
         'total',
+        'user_id',
         // 'periodo',
         // 'ano',
     ];
@@ -44,14 +45,17 @@ class Sale extends Model implements HasMedia
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'id_cliente');
     }
+
     public function proyect(): BelongsTo
     {
         return $this->belongsTo(Proyect::class, 'id_proyecto');
     }
+
     public function movement(): BelongsTo
     {
         return $this->belongsTo(Customer::class, 'id_movimiento');

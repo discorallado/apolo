@@ -7,5 +7,4 @@
                 'px-3 py-4' => ! $isInline(),
             ])
     }}
->{{ $generalSettings['comunas'][$getState()] }}
-</div>
+>{{ $generalSettings['comunas'][(int)$getState()] }}</div>

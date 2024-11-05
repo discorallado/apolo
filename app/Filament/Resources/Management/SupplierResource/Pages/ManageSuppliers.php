@@ -4,17 +4,16 @@ namespace App\Filament\Resources\Management\SupplierResource\Pages;
 
 use App\Filament\Resources\Management\SupplierResource;
 use Filament\Actions;
-use Filament\Infolists\Infolist;
-use Filament\Resources\Pages\ViewRecord;
+use Filament\Resources\Pages\ManageRecords;
 
-class ViewSupplier extends Infolist
+class ManageSuppliers extends ManageRecords
 {
     protected static string $resource = SupplierResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            Actions\CreateAction::make(),
         ];
     }
 }

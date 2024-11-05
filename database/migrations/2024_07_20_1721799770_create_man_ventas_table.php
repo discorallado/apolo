@@ -17,7 +17,7 @@ class CreateManVentasTable extends Migration
                 $table->foreignId('id_cliente')->constrained(table: 'man_clientes');
                 $table->foreignId('id_proyecto')->constrained(table: 'man_proyectos')->nullable()->default(null);
                 $table->foreignId('id_movimiento')->constrained(table: 'man_movimientos')->nullable()->default(null);
-                $table->integer('excento')->nullable()->default(null);
+                $table->integer('exento')->nullable()->default(null);
                 $table->integer('neto');
                 $table->integer('iva')->nullable()->default(null);
                 $table->integer('total');

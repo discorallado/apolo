@@ -40,7 +40,7 @@ class ProyectResource extends Resource
 {
 	protected static ?string $model = Proyect::class;
 
-	protected static ?string $slug = 'man/proyectos';
+	protected static ?string $slug = 'proyectos';
 
 	protected static ?string $modelLabel = 'Proyecto';
 
@@ -452,10 +452,10 @@ class ProyectResource extends Resource
 	{
 		return [
 			'index' => Pages\ListProyects::route('/'),
-			'create' => Pages\CreateProyect::route('/create'),
+			// 'create' => Pages\CreateProyect::route('/create'),
 			// 'index' => Pages\ManageProyects::route('/'),
 			'view' => Pages\ViewProyect::route('/{record}'),
-			'edit' => Pages\EditProyect::route('/{record}/edit'),
+			// 'edit' => Pages\EditProyect::route('/{record}/edit'),
 		];
 	}
 

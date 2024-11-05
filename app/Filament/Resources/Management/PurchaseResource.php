@@ -36,7 +36,7 @@ class PurchaseResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
-    protected static ?string $slug = 'man/compras';
+    protected static ?string $slug = 'compras';
 
     protected static ?string $modelLabel = 'Compra';
 

@@ -49,7 +49,7 @@ class ApoloPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
-            ->spa()
+            // ->spa()
             // ->sidebarCollapsibleOnDesktop()
             // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->maxContentWidth('full')
@@ -117,7 +117,7 @@ class ApoloPanelProvider extends PanelProvider
             ])
             // ->viteTheme('resources/css/filament/apolo/theme.css')
             ->viteTheme('resources/css/filament/admin/theme.css')
-            // ->font('Quicksand')
+            ->font('Quicksand')
             ->colors([
                 'primary' => Color::Blue,
                 'indigo' => Color::Indigo,
