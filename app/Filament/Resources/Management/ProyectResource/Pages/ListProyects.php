@@ -14,8 +14,7 @@ class ListProyects extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
-            Actions\CreateAction::make()
-                ->outlined(),
+            Actions\CreateAction::make(),
         ];
     }
 

@@ -12,6 +12,7 @@ class CreateCustomer extends CreateRecord
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        dd($data);
         $data['user_id'] = auth()->id();
         return $data;
     }

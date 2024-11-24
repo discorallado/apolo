@@ -6,6 +6,8 @@ use App\Filament\Resources\Management\SupplierResource\Pages;
 use App\Filament\Resources\Management\SupplierResource\RelationManagers;
 use App\Models\Management\Supplier;
 use App\Settings\GeneralSettings;
+use Closure;
+use Dotenv\Util\Str;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
@@ -16,6 +18,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Freshwork\ChileanBundle\Rut;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
@@ -49,37 +52,38 @@ class SupplierResource extends Resource
                         Section::make('Detalles')
                             ->icon('heroicon-o-document-magnifying-glass')
                             ->description('Indique datos de identificación')
+                            ->columns(3)
+                            ->columnSpan(2)
                             ->schema([
-                                TextEntry::make('nombre')
-                                    ->placeholder('sin registro.')
-                                    ->columnSpan(1),
                                 TextEntry::make('rut')
-                                    ->placeholder('sin registro.')
-                                    ->state(function (string $state) {
-                                        // $state = explode('-', $state);
-                                        // $state[0] = number_format($state[0], 0, '', '.');
-                                        // return implode('-', $state);
-                                        return $state;
-                                    })
+                                    ->placeholder('sin rut.')
+                                    ->formatStateUsing(fn(string $state) => Rut::parse($state)->quiet()->validate() ? Rut::parse($state) : $state . ' (Rut inválido)')
                                     ->columnSpan(1),
+                                TextEntry::make('nombre')
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->columnSpan(2),
                                 TextEntry::make('giro')
                                     ->placeholder('sin registro.')
-                                    ->columnSpan(2),
-                            ])
-                            ->columns(2)
-                            ->columnSpan(2),
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    // ->columnSpanFull()
+                                    ->columnSpan(3),
+                            ]),
                         Section::make('Contacto')
                             ->icon('heroicon-o-user-circle')
                             ->description('Indique datos de contacto')
-                            ->columns(2)
+                            ->columns(3)
                             ->columnSpan(2)
                             ->schema([
                                 TextEntry::make('direccion')
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
                                     ->placeholder('sin registro.')
                                     ->columnSpan(2),
-                                TextEntry::make('ciudad')
+                                TextEntry::make('city_name')
                                     ->placeholder('sin registro.')
-                                    // ->options(collect(app(GeneralSettings::class)->comunas)->all())
+                                    // ->formatStateUsing(fn($state, GeneralSettings $generalSettings) => strtoupper($generalSettings->comunas[(int)$state]))
+                                    ->columnSpan(1),
+                                TextEntry::make('email')
+                                    ->placeholder('sin registro.')
                                     ->columnSpan(1),
                                 TextEntry::make('telefono')
                                     ->placeholder('sin registro.')
@@ -90,19 +94,19 @@ class SupplierResource extends Resource
                 Grid::make(1)
                     ->columnSpan(1)
                     ->schema([
-                        Section::make('Contacto')
+                        Section::make('Información del registro')
                             ->icon('heroicon-s-information-circle')
-                            ->description('Información de los datos')
-                            ->columns(1)
-                            ->columnSpan(1)
                             ->schema([
                                 TextEntry::make('created_at')
-                                    ->label('Created at')
-                                    ->state(fn(Supplier $record): ?string => $record->created_at?->diffForHumans()),
-
+                                    ->label('Creado')
+                                    ->since(),
                                 TextEntry::make('updated_at')
-                                    ->label('Last modified at')
-                                    ->state(fn(Supplier $record): string => ($record->updated_at ? $record->updated_at->diffForHumans() : 'Sin modificaciones')),
+                                    ->label('Última modificación')
+                                    ->since()
+                                    ->placeholder('sin modificaciones.'),
+                                TextEntry::make('user.name')
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->icon('heroicon-s-user'),
                             ])
                     ]),
             ]);
@@ -125,6 +129,13 @@ class SupplierResource extends Resource
                                 Forms\Components\TextInput::make('rut')
                                     ->mask('99.999.999-*')
                                     ->placeholder('12.345.678-9')
+                                    ->rules([
+                                        fn(): Closure => function (string $attribute, $value, Closure $fail) {
+                                            if (!Rut::parse($value)->quiet()->validate()) {
+                                                $fail('The :attribute is invalid.');
+                                            }
+                                        },
+                                    ])
                                     ->columnSpan(1)
                                     ->required(),
                                 Forms\Components\TextInput::make('giro')
@@ -141,7 +152,7 @@ class SupplierResource extends Resource
                                     ->columnSpan(2)
                                     ->maxLength(65535)
                                     ->columnSpanFull(),
-                                Forms\Components\Select::make('ciudad')
+                                Forms\Components\Select::make('id_ciudad')
                                     ->options(collect(app(GeneralSettings::class)->comunas)->all())
                                     ->searchable()
                                     ->live()
@@ -169,11 +180,8 @@ class SupplierResource extends Resource
             )
             ->columns([
                 Tables\Columns\TextColumn::make('rut')
-                    ->formatStateUsing(function (string $state) {
-                        $state = explode('-', $state);
-                        $state[0] = number_format($state[0], 0, '', '.');
-                        return implode('-', $state);
-                    })
+                    ->formatStateUsing(fn(string $state) => Rut::parse($state))
+
                     ->placeholder('Sin registro.')
                     ->sortable()
                     ->searchable(),
@@ -189,8 +197,13 @@ class SupplierResource extends Resource
                         return $state;
                     })
                     ->sortable(),
-                Tables\Columns\ViewColumn::make('ciudad')
-                    ->view('tables.columns.city-column')
+                // Tables\Columns\ViewColumn::make('id_ciudad')
+                //     ->view('tables.columns.city-column')
+                //     ->placeholder('Sin registro.')
+                //     ->sortable()
+                //     ->searchable(),
+
+                Tables\Columns\TextColumn::make('ciudad')
                     ->placeholder('Sin registro.')
                     ->sortable()
                     ->searchable(),
@@ -223,10 +236,10 @@ class SupplierResource extends Resource
             ])
             ->actions([
                 // Tables\Actions\ActionGroup::make([
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make(),
-                    Tables\Actions\ForceDeleteAction::make(),
-                    Tables\Actions\RestoreAction::make(),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
                 // ]),
             ])
             ->bulkActions([

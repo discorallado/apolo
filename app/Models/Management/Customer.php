@@ -5,7 +5,7 @@ namespace App\Models\Management;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
-
+use App\Settings\GeneralSettings;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -30,10 +30,34 @@ class Customer extends Model implements HasMedia
         'rut',
         'nombre',
         'direccion',
-        'ciudad',
+        'id_ciudad',
         'telefono',
-        'giro'
+        'email',
+        'giro',
+        'user_id'
     ];
+
+    public function getCiudadAttribute()
+    {
+        // return strtoupper(app(GeneralSettings::class)->comunas[$this->id_ciudad]);
+        // return  strtoupper(GeneralSettings->comunas[(int)$this->ciudad]);
+        return  strtoupper(app(GeneralSettings::class)->comunas[$this->id_ciudad]);
+    }
+
+    public function getNombreAttribute($value)
+    {
+        return strtoupper($value);
+    }
+
+    public function getDireccionAttribute($value)
+    {
+        return strtoupper($value);
+    }
+
+    public function getGiroAttribute($value)
+    {
+        return strtoupper($value);
+    }
 
     public function User(): BelongsTo
     {

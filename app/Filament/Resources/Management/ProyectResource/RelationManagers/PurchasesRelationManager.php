@@ -23,6 +23,10 @@ class PurchasesRelationManager extends RelationManager
 
     protected static string $relationship = 'Purchases';
 
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
     public function form(Form $form): Form
     {
         return PurchaseResource::form($form);
@@ -78,7 +82,7 @@ class PurchasesRelationManager extends RelationManager
                     ->numeric()
                     ->currency('CLP')
                     ->searchable()
-                    ->summarize(Sum::make()->label('Total')->money('clp'))
+                    ->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Total'))
                     ->sortable(),
             ])
             ->filters([

@@ -119,7 +119,7 @@ class CalendarWidget extends FullCalendarWidget
                 )
                 ->successRedirectUrl(route('filament.apolo.resources.bitacora.index'))
                 ->button()
-                ->outlined()
+
         ];
     }
 

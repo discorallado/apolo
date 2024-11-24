@@ -98,7 +98,7 @@ class TablaWidget extends BaseWidget
                 ->hidden(fn(Model $record): bool => ($record->payments_sum_monto >= $record->total_dias) ? false : true)
                 ->label('Pagado')
                 ->button()
-                ->outlined()
+
                 ->size(ActionSize::ExtraSmall)
                 ->color('success')
                 ->disabled(true)
@@ -108,7 +108,7 @@ class TablaWidget extends BaseWidget
                 ->hidden(fn(Model $record): bool => ($record->payments_sum_monto >= $record->total_dias) ? true : false)
                 ->label('Pagar')
                 ->button()
-                ->outlined()
+
                 ->size(ActionSize::ExtraSmall)
                 ->color('primary')
                 ->icon('heroicon-o-banknotes')

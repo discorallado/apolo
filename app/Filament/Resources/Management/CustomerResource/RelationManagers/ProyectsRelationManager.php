@@ -15,17 +15,20 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProyectsRelationManager extends RelationManager
 {
+    protected static ?string $title = 'Proyectos';
+
+    protected static ?string $label = 'Proyecto';
+
     protected static string $relationship = 'proyects';
+
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
 
     public function form(Form $form): Form
     {
         return ProyectResource::form($form);
-        //     return $form
-        //         ->schema([
-        //             Forms\Components\TextInput::make('titulo')
-        //                 ->required()
-        //                 ->maxLength(255),
-        //         ]);
     }
 
     public function table(Table $table): Table
@@ -33,36 +36,6 @@ class ProyectsRelationManager extends RelationManager
         return ProyectResource::table($table)
             ->recordUrl(
                 fn(Model $record): string => ProyectResource::getUrl('view', [$record->id]),
-            )
-            ->actions([
-                Tables\Actions\ActionGroup::make([
-                Tables\Actions\ViewAction::make(),
-                    Tables\Actions\EditAction::make(),
-                    Tables\Actions\DeleteAction::make(),
-                    Tables\Actions\ForceDeleteAction::make(),
-                    Tables\Actions\RestoreAction::make(),
-                ])
-            ]);
-
-        // return $table
-        //     ->recordTitleAttribute('titulo')
-        //     ->columns([
-        //         Tables\Columns\TextColumn::make('titulo'),
-        //     ])
-        //     ->filters([
-        //         //
-        //     ])
-        //     ->headerActions([
-        //         Tables\Actions\CreateAction::make(),
-        //     ])
-        //     ->actions([
-        //         Tables\Actions\EditAction::make(),
-        //         Tables\Actions\DeleteAction::make(),
-        //     ])
-        //     ->bulkActions([
-        //         Tables\Actions\BulkActionGroup::make([
-        //             Tables\Actions\DeleteBulkAction::make(),
-        //         ]),
-        //     ]);
+            );
     }
 }

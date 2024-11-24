@@ -82,22 +82,22 @@ class WorkerResource extends Resource
             ->actions([
                 Tables\Actions\EditAction::make()
                     ->button()
-                    ->outlined()
+
                     ->size(ActionSize::ExtraSmall)
                     ->button()
-                    ->outlined()
+
                     ->size(ActionSize::ExtraSmall),
                 Tables\Actions\DeleteAction::make()
                     ->button()
-                    ->outlined()
+
                     ->size(ActionSize::ExtraSmall),
                 Tables\Actions\ForceDeleteAction::make()
                     ->button()
-                    ->outlined()
+
                     ->size(ActionSize::ExtraSmall),
                 Tables\Actions\RestoreAction::make()
                     ->button()
-                    ->outlined()
+
                     ->size(ActionSize::ExtraSmall),
             ])
             ->bulkActions([

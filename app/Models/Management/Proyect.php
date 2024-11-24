@@ -36,6 +36,52 @@ class Proyect extends Model implements HasMedia
     protected $casts = [
         'proyect_files' => 'array',
     ];
+
+    public function getTituloAttribute($value)
+    {
+        return strtoupper($value);
+    }
+    public function getDetalleAttribute($value)
+    {
+        return strtoupper($value);
+    }
+    public function getTituloCompuestoAttribute($value)
+    {
+        if (!isset($this->relations['customer'])) {
+            $this->load('customer');
+        }
+        $cliente = $this->customer()->get();
+        // dd($cliente->first()->nombre);
+        return strtoupper($this->titulo) . ' - ' . strtoupper($cliente->first()->nombre);
+    }
+    public function getEstatusAttribute($value)
+    {
+        if (!isset($this->relations['movements'])) {
+            $this->load('movements');
+        }
+        if ($this->estado) {
+            return 'finalizado';
+        } else {
+            $relatedMovements = $this->movements()->get();
+            if ($relatedMovements->count() > 0) {
+                $relatedCargos = $relatedMovements->sum('cargo');
+                $relatedIngresos = $relatedMovements->sum('ingreso');
+                $diff = $relatedCargos - $relatedIngresos;
+                if ($diff > 0) {
+                    return 'activo';
+                } else {
+                    if ($relatedIngresos > 0) {
+                        return 'finalizar';
+                    } else {
+                        return 'activo';
+                    }
+                }
+            } else {
+                return 'inactivo';
+            }
+        }
+    }
+
     public function movements(): HasMany
     {
         return $this->hasMany(Movement::class, 'id_proyecto');

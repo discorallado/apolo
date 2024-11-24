@@ -3,6 +3,7 @@
 namespace App\Models\Management;
 
 use App\Models\User;
+use App\Settings\GeneralSettings;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -16,7 +17,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Supplier extends Model implements HasMedia
 {
 
-    use InteractsWithMedia;
+	use InteractsWithMedia;
 	use HasFactory;
 	use SoftDeletes;
 
@@ -31,10 +32,32 @@ class Supplier extends Model implements HasMedia
 		'rut',
 		'nombre',
 		'direccion',
-		'ciudad',
+		'id_ciudad',
 		'telefono',
+		'email',
 		'giro'
 	];
+
+	public function getCiudadAttribute()
+	{
+		// dd(app(GeneralSettings::class));
+		return  strtoupper(app(GeneralSettings::class)->comunas[$this->id_ciudad]);
+	}
+
+	public function getNombreAttribute($value)
+	{
+		return strtoupper($value);
+	}
+
+	public function getDireccionAttribute($value)
+	{
+		return strtoupper($value);
+	}
+
+	public function getGiroAttribute($value)
+	{
+		return strtoupper($value);
+	}
 
 	public function user(): BelongsTo
 	{

@@ -1,3 +1,0 @@
-<tfoot {{ $attributes }}>
-    {{ $slot }}
-</tfoot>

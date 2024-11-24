@@ -49,7 +49,7 @@ class ApoloPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
-            // ->spa()
+            ->spa()
             // ->sidebarCollapsibleOnDesktop()
             // ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->maxContentWidth('full')

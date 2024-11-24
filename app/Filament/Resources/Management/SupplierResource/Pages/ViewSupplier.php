@@ -7,7 +7,7 @@ use Filament\Actions;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
-class ViewSupplier extends Infolist
+class ViewSupplier extends ViewRecord
 {
     protected static string $resource = SupplierResource::class;
 

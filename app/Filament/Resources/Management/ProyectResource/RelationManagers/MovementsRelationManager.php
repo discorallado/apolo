@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Management\ProyectResource\RelationManagers;
 
+use App\Filament\Resources\Management\MovementResource;
+use App\Filament\Resources\Management\ProyectResource;
 use App\Forms\Components\CustomerProyectField;
 use App\Models\Management\Proyect;
 use Filament\Forms;
@@ -13,18 +15,26 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
+use Filament\Tables\Actions\CreateAction;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
 
 class MovementsRelationManager extends RelationManager
 {
-    protected static ?string $title = 'Ventas/Pagos';
+    protected static ?string $title = 'Movimientos';
 
     protected static ?string $label = 'Venta/Pago';
 
     protected static string $relationship = 'movements';
+
+    public function isReadOnly(): bool
+    {
+        return false;
+    }
 
     public function form(Form $form): Form
     {
@@ -136,7 +146,7 @@ class MovementsRelationManager extends RelationManager
                                             ->key('dynamicMontosFields'),
                                     ]),
                                 Forms\Components\TextInput::make('cot')
-                                    ->affix('COT-')
+                                    // ->affix('COT-')
                                     ->required(),
                                 Forms\Components\Select::make('tipo_factura')
                                     ->required()
@@ -166,99 +176,121 @@ class MovementsRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('created_at')
-            ->inverseRelationship('proyect')
-            ->emptyStateActions([
-                Tables\Actions\CreateAction::make(),
+            ->recordClasses(fn(Model $record) => match ($record->tipo) {
+                'VENTA' => 'venta',
+                'PAGO' => 'pago',
+            })
+            ->paginationPageOptions([50, 100, 200, 'all'])
+            ->defaultPaginationPageOption(50)
+            ->recordUrl(
+                fn(Model $record): string => MovementResource::getUrl('view', [$record->id]),
+            )
+            ->defaultSort('fecha', 'asc')
+            ->headerActions([
+                Tables\Actions\CreateAction::make()
+                    ->createAnother()
+                    ->stickyModalHeader()
+                    ->stickyModalFooter()
+                    ->using(function (array $data, string $model): Model {
+                        // dd($data);
+                        $data['id_proyecto'] = $data['proyect_data']['id'];
+                        $data['factura'] = $data['factura_pendiente'] ? 'PEND' : $data['factura'];
+                        $data['cargo'] = ($data['tipo'] == 'VENTA') ? $data['valor'] : null;
+                        $data['ingreso'] = ($data['tipo'] == 'PAGO') ? $data['valor'] : null;
+                        $data['user_id'] = Auth()->id();
+                        return $model::create($data);
+                    }),
             ])
-            ->paginated(false)
             ->columns([
-                Tables\Columns\TextColumn::make('tipo')
-                    ->formatStateUsing(function (string $state) {
-                        return strtoupper($state);
-                    })
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'venta' => 'warning',
-                        'pago' => 'success',
-                    })
-                    ->searchable()
+                Tables\Columns\ViewColumn::make('tipo')
+                    ->label('tipo')
+                    ->view('tables.columns.movement-type-column')
+                    ->placeholder('Sin registro.')
                     ->sortable()
-                    ->columnSpan(1),
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('fecha')
+                    ->date()
+                    ->sortable()
+                    ->searchable(),
                 Tables\Columns\TextColumn::make('cot')
                     ->label('Cotizacion')
-                    ->formatStateUsing(function (string $state) {
-                        if ($state == 'SC') {
-                            return 'Sin cotización.';
-                        } elseif (count(explode('-', $state)) == 2) {
-                            return 'COT-' . $state;
-                        }
-                        return $state;
-                    })
+                    ->placeholder('sin registro.')
                     ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('factura')
-                    ->alignCenter()
+                    ->placeholder('sin registro.')
                     ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('cargo')
                     ->numeric()
                     ->placeholder('$0')
                     ->currency('clp')
-                    ->summarize(Sum::make()->label('Cargos'))
+                    ->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Cargos'))
                     ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('ingreso')
                     ->numeric()
                     ->placeholder('$0')
                     ->currency('clp')
-                    ->summarize(Sum::make()->label('Ingresos'))
+                    ->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Ingresos'))
                     ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
+                    ->searchable(),
             ])
             ->filters([
+                DateRangeFilter::make('created_at')
+                    ->placeholder('desde - hasta')
+                    ->label('Filtrar por fecha'),
                 Tables\Filters\TrashedFilter::make(),
             ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make()
-                    ->mutateFormDataUsing(function (array $data): array {
-                        // dd($data);
-                        $data['user_id'] = auth()->id();
-
-                        if ($data['tipo_factura'] != 'numero') {
-                            $data['factura'] = $data['tipo_factura'];
-                        }
-
-                        $data['id_proyecto'] = $data['proyect_data']['id'];
-                        unset($data['proyect_data']);
-                        unset($data['tipo_factura']);
-                        unset($data['cliente']);
-                        return $data;
-                    }),
-                Tables\Actions\AssociateAction::make()
-                    ->preloadRecordSelect(),
-            ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DissociateAction::make(),
-                Tables\Actions\DeleteAction::make(),
-                Tables\Actions\RestoreAction::make(),
-            ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DissociateBulkAction::make(),
+                Tables\Actions\ActionGroup::make([
+                    Tables\Actions\CreateAction::make()
+                        ->label('Crear otro')
+                        ->icon('heroicon-s-arrow-path')
+                        ->stickyModalHeader()
+                        ->stickyModalFooter()
+                        // ->fillForm(fn(Movement $record): array => [
+                        //     'proyect_data.id_cliente' => $record->proyect->customer->id,
+                        // ])
+                        ->using(function (array $data, string $model): Model {
+                            $data['id_proyecto'] = $data['proyect_data']['id'];
+                            $data['factura'] = $data['factura_pendiente'] ? 'PEND' : $data['factura'];
+                            $data['cargo'] = ($data['tipo'] == 'VENTA') ? $data['valor'] : null;
+                            $data['ingreso'] = ($data['tipo'] == 'PAGO') ? $data['valor'] : null;
+                            $data['user_id'] = Auth()->id();
+                            // dd($data);
+                            return $model::create($data);
+                        }),
+                    Tables\Actions\EditAction::make()
+                        ->stickyModalHeader()
+                        ->stickyModalFooter()
+                        ->using(function (Model $record, array $data): Model {
+                            $data['id_proyecto'] = $data['proyect_data']['id'];
+                            $data['factura'] = $data['factura_pendiente'] ? 'PEND' : $data['factura'];
+                            $data['cargo'] = ($data['tipo'] == 'VENTA') ? $data['valor'] : null;
+                            $data['ingreso'] = ($data['tipo'] == 'PAGO') ? $data['valor'] : null;
+                            // dd($data);
+                            $record->update($data);
+                            return $record;
+                        }),
+                    Tables\Actions\DeleteAction::make(),
+                    Tables\Actions\ForceDeleteAction::make(),
+                    Tables\Actions\RestoreAction::make(),
                 ]),
             ])
-            ->modifyQueryUsing(fn(Builder $query) => $query->withoutGlobalScopes([
-                SoftDeletingScope::class,
-            ]));
+            // ->bulkActions([
+            //     Tables\Actions\BulkActionGroup::make([
+            //         Tables\Actions\DeleteBulkAction::make(),
+            //         Tables\Actions\ForceDeleteBulkAction::make(),
+            //         Tables\Actions\RestoreBulkAction::make(),
+            //     ])->dropdown(false),
+            // ])
+            ->emptyStateActions([
+                Tables\Actions\CreateAction::make(),
+            ]);
     }
 }

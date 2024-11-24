@@ -121,9 +121,9 @@ class PaymentResource extends Resource
             ])
             ->actions([
                 // Tables\Actions\ActionGroup::make([
-                // Tables\Actions\ViewAction::make()->label('Ver')->button()->outlined()->size(ActionSize::ExtraSmall),
-                Tables\Actions\EditAction::make()->button()->outlined()->size(ActionSize::ExtraSmall),
-                Tables\Actions\DeleteAction::make()->button()->outlined()->size(ActionSize::ExtraSmall),
+                // Tables\Actions\ViewAction::make()->label('Ver')->button()->size(ActionSize::ExtraSmall),
+                Tables\Actions\EditAction::make()->button()->size(ActionSize::ExtraSmall),
+                Tables\Actions\DeleteAction::make()->button()->size(ActionSize::ExtraSmall),
                 // ])->dropdown(false),
             ])
             ->bulkActions([

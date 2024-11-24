@@ -15,7 +15,11 @@ class ManageProyects extends ManageRecords
     {
         return [
             Actions\CreateAction::make()
-                ->outlined(),
+                ->mutateFormDataUsing(function (array $data): array {
+                    // dd($data);
+                    $data['user_id'] = auth()->id();
+                    return $data;
+                }),
         ];
     }
 

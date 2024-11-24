@@ -221,16 +221,11 @@ class SaleResource extends Resource
 
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total')
-                    ->summarize(Sum::make()->label('Total')->money('clp'))
+                    ->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Total'))
                     ->numeric()
                     ->currency('CLP')
                     ->searchable()
                     ->sortable(),
-
-
-                ProyectAsignColumn::make('id_proyecto')
-                    ->label('Proyecto'),
-
 
                 Tables\Columns\TextColumn::make('created_at')
                     ->searchable()
@@ -252,72 +247,10 @@ class SaleResource extends Resource
             ])
             ->filters([
                 Tables\Filters\TrashedFilter::make(),
-                Tables\Filters\Filter::make('created_at')
-                    ->form([
-                        Forms\Components\DatePicker::make('created_from')
-                            ->label('desde:')
-                            ->placeholder(fn($state): string => 'Dec 18, ' . now()->subYear()->format('Y')),
-                        Forms\Components\DatePicker::make('created_until')
-                            ->label('hasta:')
-                            ->placeholder(fn($state): string => now()->format('M d, Y')),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when(
-                                $data['created_from'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
-                            )
-                            ->when(
-                                $data['created_until'],
-                                fn(Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
-                            );
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-                        if ($data['created_from'] ?? null) {
-                            $indicators['created_from'] = 'Order from ' . Carbon::parse($data['created_from'])->toFormattedDateString();
-                        }
-                        if ($data['created_until'] ?? null) {
-                            $indicators['created_until'] = 'Order until ' . Carbon::parse($data['created_until'])->toFormattedDateString();
-                        }
 
-                        return $indicators;
-                    }),
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    Action::make('asignar_proyecto')
-                        ->hidden(fn(Sale $record): bool => ($record->id_proyecto > 0) ? true : false)
-                        ->label('Asignar proyecto')
-                        ->color('info')
-                        ->icon('heroicon-o-archive-box-arrow-down')
-                        ->modalHeading('Asignar proyecto')
-                        ->modalSubheading(fn(Sale $record): string => 'Asigne un proyecto a la venta del ' . $record->fecha_dcto . ' para ' . $record->customer->nombre)
-                        ->modalButton('Guardar')
-                        ->modalFooterActionsAlignment('right')
-                        ->modalWidth('md')
-                        ->action(function (array $data, Sale $record): void {
-                            $record->id_proyecto = $data['id_proyecto'];
-                            $record->save();
-                        })
-                        ->form([
-                            Forms\Components\Select::make('id_proyecto')
-                                ->label('Proyecto')
-                                ->options(function (Model $record) {
-                                    return Proyect::where('id_cliente', '=', $record->customer->id)->pluck('titulo', 'id');
-                                })
-                                ->searchable(),
-                        ]),
-                    Action::make('quitar_proyecto')
-                        ->hidden(fn(Sale $record): bool => ($record->id_proyecto === null) ? true : false)
-                        ->label('Quitar proyecto')
-                        ->color('warning')
-                        ->icon('heroicon-o-archive-box-x-mark')
-                        ->action(function (Sale $record): void {
-                            $record->id_proyecto = null;
-                            $record->save();
-                        })
-                        ->requiresConfirmation(),
                     Tables\Actions\EditAction::make(),
                     Tables\Actions\DeleteAction::make(),
                     Tables\Actions\ForceDeleteAction::make(),
@@ -331,6 +264,7 @@ class SaleResource extends Resource
                     Tables\Actions\RestoreBulkAction::make(),
                 ]),
             ])
+
             ->emptyStateActions([
                 Tables\Actions\CreateAction::make(),
             ]);

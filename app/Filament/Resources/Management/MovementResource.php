@@ -2,18 +2,31 @@
 
 namespace App\Filament\Resources\Management;
 
+use Closure;
+
 use App\Filament\Resources\Management\MovementResource\Pages;
 use App\Forms\Components\CustomerProyectField;
+use App\Models\Management\Customer;
 use App\Models\Management\Movement;
 use App\Models\Management\Proyect;
 use Filament\Forms;
+use Filament\Forms\Components\Actions;
 use Filament\Forms\Components\Actions\Action;
 use Filament\Forms\Components\Grid;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\ToggleButtons;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Infolists\Components\Actions\Action as ActionsAction;
+use Filament\Infolists\Components\Fieldset;
+use Filament\Infolists\Components\Grid as ComponentsGrid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\Summarizers\Sum;
@@ -26,6 +39,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\RawJs;
 use Malzariey\FilamentDaterangepickerFilter\Filters\DateRangeFilter;
+use Pelmered\FilamentMoneyField\Forms\Components\MoneyInput;
+use Pelmered\FilamentMoneyField\Infolists\Components\MoneyEntry;
 
 class MovementResource extends Resource
 {
@@ -48,198 +63,325 @@ class MovementResource extends Resource
 
     public static function getRecordTitle(?Model $record): string | Htmlable | null
     {
-        return 'movimiento [' . $record?->tipo . '] del ' . $record?->fecha;
+        return 'registro de ' . $record?->tipo . ' del ' . $record?->fecha;
+    }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(3)
+            ->schema([
+                ComponentsGrid::make(2)
+                    ->columnSpan(2)
+                    ->schema([
+                        Section::make('Detalles')
+                            ->columns(2)
+                            ->icon('heroicon-o-arrows-right-left')
+                            ->description('Detalles del movimiento')
+                            ->schema([
+                                TextEntry::make('proyect.customer.nombre')
+                                    ->columnSpan(1)
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->label('Cliente')
+                                    ->hintAction(
+                                        ActionsAction::make('Ver cliente')
+                                            ->url(fn(?Model $record) => route('filament.apolo.resources.clientes.view', ['record' => $record->proyect->customer->id]))
+                                            ->openUrlInNewTab()
+                                            ->icon('heroicon-o-link')
+                                    ),
+                                TextEntry::make('proyect.titulo')
+                                    ->label('Proyecto')
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->hintAction(
+                                        ActionsAction::make('Ver proyecto')
+                                            ->url(fn(?Model $record) => route('filament.apolo.resources.proyectos.view', ['record' => $record->proyect->id]))
+                                            ->openUrlInNewTab()
+                                            ->icon('heroicon-o-link')
+                                    ),
+                                ComponentsGrid::make(3)
+                                    ->schema([
+                                        TextEntry::make('fecha')
+                                            ->date()
+                                            ->columnSpan(1),
+                                        TextEntry::make('cot')
+                                            ->label('Cotización')
+                                            ->placeholder('Sin cotización.')
+                                            ->prefix('COT-'),
+                                        TextEntry::make('factura')
+                                            ->label('Nro. factura')
+                                            ->placeholder('Sin factura.')
+                                            ->prefix('N° '),
+                                    ]),
+                                TextEntry::make('detalle')
+                                    ->placeholder('Sin detalles.')
+                                    ->columnSpanFull(),
+                            ]),
+                        Section::make('Contable')
+                            ->icon('heroicon-o-banknotes')
+                            ->description('Resumen de ventas y pagos.')
+                            ->columns(3)
+                            ->columnSpan(2)
+                            ->schema([
+
+                                TextEntry::make('tipo')
+                                    ->badge()
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->icon(fn(string $state): string => match ($state) {
+                                        'VENTA' => 'heroicon-o-shopping-cart',
+                                        'PAGO' => 'heroicon-o-wallet',
+                                    })
+                                    ->color(fn(string $state): string => match ($state) {
+                                        'VENTA' => 'warning',
+                                        'PAGO' => 'success',
+                                    })
+                                    ->iconColor(fn(string $state): string => match ($state) {
+                                        'VENTA' => 'info',
+                                        'PAGO' => 'success',
+                                    }),
+                                MoneyEntry::make('valor')
+                                    ->state(fn(?Model $record) => $record->cargo ?? $record->ingreso)
+                                    ->columnSpan(1),
+                                Fieldset::make('del Proyecto')
+                                    ->columns(4)
+                                    ->schema([
+                                        MoneyEntry::make('monto_proyectado')
+                                            ->state(function (Model $record): float {
+                                                return $record->proyect->monto_proyectado;
+                                            }),
+                                        MoneyEntry::make('cargos')
+                                            ->state(function (Model $record): float {
+                                                return $record->proyect->movements->sum('cargo');
+                                            }),
+
+                                        MoneyEntry::make('ingresos')
+                                            ->state(function (Model $record): float {
+                                                return $record->proyect->movements->sum('ingreso');
+                                            }),
+                                        MoneyEntry::make('deuda')
+                                            ->state(function (Model $record): float {
+                                                return $record->proyect->movements->sum('cargo') - $record->proyect->movements->sum('ingreso');
+                                            }),
+                                        ComponentsGrid::make(2)
+                                            ->schema([
+                                                TextEntry::make('sales')
+                                                    ->label('Facturas emitidas')
+                                                    ->state(function (Model $record): float {
+                                                        return $record->proyect->sales->count();
+                                                    })
+                                                    ->suffix(fn($state): string => ($state == 1) ? ' factura' : ' facturas'),
+                                                TextEntry::make('purchases')
+                                                    ->label('Facturas de compras')
+                                                    ->state(function (Model $record): float {
+                                                        return $record->proyect->purchases->count();
+                                                    })
+                                                    ->suffix(fn($state): string => ($state == 1) ? ' factura' : ' facturas'),
+                                            ])
+                                    ]),
+                            ]),
+
+                        Section::make('Extras')
+                            ->columns(2)
+                            ->description('Información extra')
+                            ->icon('heroicon-o-paper-clip')
+                            ->schema([
+                                ViewEntry::make('customer_files')
+                                    ->label('Archivos adjuntos')
+                                    ->view('infolists.components.files-entry')
+                                    ->state(fn(Model $record) => $record->getMedia('movimientos'))
+                                    ->columnSpanFull(),
+                                TextEntry::make('observaciones')
+                                    ->placeholder('Sin observaciones.')
+                                    ->columnSpanFull(),
+                            ])
+                    ]),
+                ComponentsGrid::make(1)
+                    ->columnSpan(1)
+                    ->schema([
+                        Section::make('Información del registro')
+                            ->icon('heroicon-s-information-circle')
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Creado')
+                                    ->since(),
+                                TextEntry::make('updated_at')
+                                    ->label('Última modificación')
+                                    ->since()
+                                    ->placeholder('sin modificaciones.'),
+                                TextEntry::make('user.name')
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->icon('heroicon-s-user'),
+                            ])
+                    ]),
+            ]);
     }
 
     public static function form(Form $form): Form
     {
         return $form
-            ->columns(3)
+            ->columns(2)
             ->schema([
+                CustomerProyectField::make('proyect_data')
+                    ->relationship('proyect')
+                    ->label(false)
+                    ->columnSpanFull(),
 
-                Grid::make(2)
+                Forms\Components\Section::make('Detalles')
+                    ->columns(2)
+                    ->icon('heroicon-o-arrows-right-left')
+                    ->description('Detalles del movimiento')
                     ->schema([
-                        CustomerProyectField::make('proyect_data')
-                            ->relationship('proyect')
-                            ->label(false)
-                            ->columnSpanFull(),
-                        // ->disabledOn(MovementsRelationManager::class),
+                        Forms\Components\DatePicker::make('fecha')
+                            ->columnSpan(1)
+                            ->format('Y-m-d')
+                            ->default(now())
+                            ->required(),
 
-                        Forms\Components\Section::make('Detalles')
-                            ->columns(3)
+                        Forms\Components\ToggleButtons::make('tipo')
+                            ->required()
+                            ->inline()
+                            ->columnSpan(1)
+                            ->default('VENTA')
+                            ->options([
+                                'VENTA' => 'Venta',
+                                'PAGO' => 'Pago',
+                            ])
+                            ->icons([
+                                'VENTA' => 'heroicon-o-pencil',
+                                'PAGO' => 'heroicon-o-clock',
+                            ])
+                            ->colors([
+                                'VENTA' => 'info',
+                                'PAGO' => 'success',
+                            ]),
+
+                        Forms\Components\Grid::make(4)
+                            ->columnSpanFull()
                             ->schema([
-
-                                Forms\Components\DatePicker::make('fecha')
-                                    ->default(\now())
-                                    ->required(),
-
-                                Forms\Components\Placeholder::make('monto_proyecto')
-                                    // ->readOnly()
-                                    // ->prefix('$')
+                                Placeholder::make('monto_proyectado')
+                                    ->key('monto_proyectado')
                                     ->live()
-                                    // ->disabled(fn (Get $get) => is_null($get('proyect_data.id')) ? true : false)
-                                    ->hintIcon('heroicon-s-information-circle')
-                                    // ->hint('from Proyects')
                                     ->content(function (Get $get) {
-                                        return !is_null($get('proyect_data.id')) ? '$' . number_format(
-                                            Proyect::where('id', $get('proyect_data.id'))
+                                        if ($get('proyect_data.id')) {
+                                            return money(Proyect::where('id', $get('proyect_data.id'))
                                                 ->get()
                                                 ->first()
-                                                ->monto_proyectado,
-                                            0,
-                                            0,
-                                            '.'
-                                        )
-                                            : '$0';
-                                    }),
-                                Forms\Components\Grid::make(3)
-                                    ->live()
-                                    ->columnSpan(3)
-                                    ->schema([
-                                        Forms\Components\ToggleButtons::make('tipo')
-                                            ->required()
-                                            ->inline()
-                                            ->grouped()
-                                            ->default('venta')
-                                            ->options([
-                                                'venta' => 'Venta',
-                                                'pago' => 'Pago',
-                                            ])
-                                            ->icons([
-                                                'venta' => 'heroicon-o-pencil',
-                                                'pago' => 'heroicon-o-clock',
-                                            ])
-                                            ->colors([
-                                                'venta' => 'info',
-                                                'pago' => 'success',
-                                            ])
-                                            ->live()
-                                            ->afterStateUpdated(fn(ToggleButtons $component) => $component
-                                                ->getContainer()
-                                                ->getComponent('dynamicMontosFields')
-                                                ->getChildComponentContainer()
-                                                ->fill()),
-
-                                        Forms\Components\Grid::make(4)
-                                            ->live()
-                                            ->columnSpan(2)
-                                            ->schema(fn(Get $get): array => match ($get('tipo')) {
-                                                'venta' => [
-                                                    Forms\Components\TextInput::make('cargo')
-                                                        ->mask(RawJs::make(<<<'JS'
-                                                                $money($input, ',', '.')
-                                                            JS))
-                                                        ->stripCharacters('.')
-                                                        ->numeric()
-                                                        ->prefix('$')
-                                                        ->hintAction(
-                                                            Action::make('Copiar monto proyectado')
-                                                                ->icon('heroicon-s-document-duplicate')
-                                                                ->action(function (Set $set, Get $get, $state) {
-                                                                    $set('cargo', Proyect::where('id', $get('proyect_data.id'))
-                                                                        ->get()
-                                                                        ->first()
-                                                                        ->monto_proyectado);
-                                                                })
-                                                        )
-                                                        ->columnSpanFull(),
-                                                    Forms\Components\Hidden::make('ingreso'),
-                                                ],
-                                                'pago' => [
-                                                    Forms\Components\Hidden::make('cargo'),
-                                                    Forms\Components\TextInput::make('ingreso')
-                                                        ->mask(RawJs::make('$money($input)'))
-                                                        ->stripCharacters('.')
-                                                        ->numeric()
-                                                        ->prefix('$')
-                                                        ->hintAction(
-                                                            Action::make('Copiar monto proyectado')
-                                                                ->icon('heroicon-s-document-duplicate')
-                                                                ->action(function (Set $set, Get $get, $state) {
-                                                                    $set('ingreso', Proyect::where('id', $get('proyect_data.id'))
-                                                                        ->get()
-                                                                        ->first()
-                                                                        ->monto_proyectado);
-                                                                })
-                                                        )
-                                                        ->columnSpanFull(),
-                                                ],
-                                                default => []
-                                            })
-                                            ->key('dynamicMontosFields'),
+                                                ->monto_proyectado, 'clp');
+                                        } else {
+                                            return money(0, 'clp');
+                                        }
+                                    })
+                                    ->hintActions([
+                                        Action::make('Copiar')
+                                            ->label(false)
+                                            ->icon('heroicon-o-document-duplicate')
+                                            ->tooltip('Copiar valor')
+                                            ->action(function (Placeholder $component, Set $set) {
+                                                $set('valor', $component->getContent()->getAmount());
+                                            }),
                                     ]),
-                                Forms\Components\TextInput::make('cot')
-                                    ->required(),
+                                Placeholder::make('deuda')
+                                    ->key('deuda')
+                                    ->live()
+                                    ->content(function (Get $get) {
+                                        if ($get('proyect_data.id')) {
+                                            $related = Movement::where('id_proyecto', $get('proyect_data.id'));
+                                            return money($related->sum('cargo') - $related->sum('ingreso'), 'clp');
+                                            # code...
+                                        } else {
+                                            return money(0, 'clp');
+                                        }
+                                    })
+                                    ->hintActions([
+                                        Action::make('Copiar')
+                                            ->label(false)
+                                            ->icon('heroicon-o-document-duplicate')
+                                            ->tooltip('Copiar valor')
+                                            ->action(function (Placeholder $component, Set $set) {
+                                                $set('valor', $component->getContent()->getAmount());
+                                            }),
+                                    ]),
+                                Placeholder::make('ultimo_pago')
+                                    ->key('ultimo_pago')
+                                    ->live()
+                                    ->content(function (Get $get) {
+                                        if ($get('proyect_data.id')) {
+                                            $related = Movement::where([
+                                                ['id_proyecto', "=", $get('proyect_data.id')],
+                                                ['tipo', "=", 'PAGO'],
+                                            ])->latest('id')->first();
+                                            return money($related->ingreso ?? 0, 'clp');
+                                        } else {
+                                            return money(0, 'clp');
+                                        }
+                                    })
+                                    ->hintActions([
+                                        Action::make('Copiar')
+                                            ->label(false)
+                                            ->icon('heroicon-o-document-duplicate')
+                                            ->tooltip('Copiar valor')
+                                            ->action(function (Placeholder $component, Set $set) {
+                                                $set('valor', $component->getContent()->getAmount());
+                                            }),
+                                    ]),
 
-                                Forms\Components\Select::make('tipo_factura')
+                                MoneyInput::make('valor')
                                     ->required()
-                                    ->options([
-                                        'numero' => 'Numero factura',
-                                        'SF' => 'Sin factura',
-                                        'PEND' => 'Factura pendiente',
-                                    ])
-                                    ->live(),
-
+                                    ->formatStateUsing(function (?Model $record): string|null {
+                                        return $record->cargo ?? $record->ingreso ?? null;
+                                    }),
+                            ]),
+                        Forms\Components\Grid::make(3)
+                            ->columnSpanFull()
+                            ->schema([
+                                Forms\Components\TextInput::make('cot')
+                                    ->prefix('COT-'),
                                 Forms\Components\TextInput::make('factura')
                                     ->maxLength(10)
                                     ->label('Nro. factura')
+                                    ->prefix('N°')
                                     ->live()
-                                    ->disabled(fn(Get $get) => $get('tipo_factura') != 'numero'),
-
-                                Forms\Components\Textarea::make('detalle')
-                                    // ->required()
-                                    ->columnSpanFull(),
-
+                                    ->disabled(fn(Get $get) => $get('factura_pendiente')),
+                                Forms\Components\Toggle::make('factura_pendiente')
+                                    ->live()
+                                    ->formatStateUsing(function (?Model $record): string|null {
+                                        return isset($record->factura) ? ($record->factura == 'PEND' ? true : false) : false;
+                                    })
+                                    ->afterStateUpdated(function ($state, Set $set) {
+                                        // dd($set('factura', 0));
+                                        $set('factura', null);
+                                    })
+                                    ->reactive()
+                                    ->inline(false),
                             ]),
-                        Forms\Components\Section::make('Anexos')
-                            ->columns(2)
-                            ->schema([
+                        Forms\Components\RichEditor::make('detalle')
+                            ->columnSpanFull()
+                            ->disableAllToolbarButtons()
+                            ->toolbarButtons(['bold', 'bulletList', 'italic', 'link', 'orderedList', 'redo', 'strike', 'undo'])
+                            ->columnSpanFull(),
+                    ]),
 
-                                SpatieMediaLibraryFileUpload::make('movement_files')
-                                    ->label('Archivos')
-                                    ->collection('movimientos')
-                                    ->multiple()
-                                    ->openable()
-                                    ->downloadable()
-                                    ->deletable()
-                                    ->previewable()
-                                    ->columnSpanFull(),
-                                Forms\Components\RichEditor::make('observaciones')
-                                    ->maxLength(65535)
-                                    ->disableAllToolbarButtons()
-                                    ->toolbarButtons(['bold', 'bulletList', 'italic', 'link', 'orderedList', 'redo', 'strike', 'undo'])
-                                    ->columnSpanFull(),
-
-                            ])
-                    ])->columnSpan(['lg' => fn(?Model $record) => $record === null ? 3 : 2]),
-
-                Forms\Components\Grid::make(1)
-                    ->columnSpan(1)
+                Forms\Components\Section::make('Extras')
+                    ->columns(2)
+                    ->collapsed()
+                    ->description('Información extra')
+                    ->icon('heroicon-o-paper-clip')
                     ->schema([
-                        Forms\Components\Section::make('Metadatos')
-                            ->description('Información de los datos')
-                            ->schema([
-                                Forms\Components\Placeholder::make('created_at')
-                                    ->label('Creado')
-                                    ->content(fn(Model $record): ?string => $record->created_at?->diffForHumans()),
+                        SpatieMediaLibraryFileUpload::make('movement_files')
+                            ->label('Archivos')
+                            ->collection('movimientos')
+                            ->multiple()
+                            ->openable()
+                            ->downloadable()
+                            ->deletable()
+                            ->previewable()
+                            ->columnSpanFull(),
+                        Forms\Components\RichEditor::make('observaciones')
+                            ->columnSpanFull()
+                            ->disableAllToolbarButtons()
+                            ->toolbarButtons(['bold', 'bulletList', 'italic', 'link', 'orderedList', 'redo', 'strike', 'undo'])
+                            ->columnSpanFull(),
 
-                                Forms\Components\Placeholder::make('updated_at')
-                                    ->label('Última modificación')
-                                    ->content(fn(Model $record): ?string => $record->updated_at?->diffForHumans()),
-                            ])
-                            ->columnSpan(['lg' => 1]),
-
-                        Forms\Components\Section::make('Estado del proyecto')
-                            ->schema([
-                                Forms\Components\Toggle::make('estado')
-                                    ->label('Pagado')
-                                    ->inline()
-                                    ->inlineLabel()
-                                    ->required(),
-                            ])
-                            ->columnSpan(['lg' => 1]),
                     ])
-                    ->hidden(fn(?Model $record) => $record === null),
             ]);
     }
 
@@ -247,13 +389,15 @@ class MovementResource extends Resource
     {
         return $table
             ->recordClasses(fn(Model $record) => match ($record->tipo) {
-                'venta' => 'venta !bg-yellow-100 !border-l-4 !border-l-yellow-400 dark:!bg-transparent !border-l-yellow-500 ',
-                'pago' => 'pago !bg-lime-200  !border-l-4 !border-l-lime-500 dark:!bg-transparent !border-l-green-500 ',
-                default => null,
+                'VENTA' => 'venta',
+                'PAGO' => 'pago',
             })
             ->paginationPageOptions([50, 100, 200, 'all'])
             ->defaultPaginationPageOption(50)
-            ->defaultSort('fecha', 'desc')
+            ->recordUrl(
+                fn(Model $record): string => MovementResource::getUrl('view', [$record->id]),
+            )
+            ->defaultSort('created_at', 'desc')
             ->groups([
                 Group::make('id_proyecto')
                     ->label('Proyectos')
@@ -263,88 +407,47 @@ class MovementResource extends Resource
                 'factura',
             ])
             ->columns([
-                Tables\Columns\TextColumn::make('tipo')
-                    ->formatStateUsing(function (string $state) {
-                        return strtoupper($state);
-                    })
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'venta' => 'warning',
-                        'pago' => 'success',
-                    })
-                    ->searchable()
+                Tables\Columns\ViewColumn::make('tipo')
+                    ->label('Tipo')
+                    ->view('tables.columns.movement-type-column')
+                    ->placeholder('Sin registro.')
                     ->sortable()
-                    ->columnSpan(1),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('fecha')
                     ->date()
                     ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
+                    ->searchable(),
 
-                Tables\Columns\TextColumn::make('proyect.customer.nombre')
-                    ->label('Cliente')
-                    ->tooltip(function (TextColumn $column): ?string {
-                        $state = $column->getState();
-                        if (strlen($state) <= 15) {
-                            return null;
-                        }
-                        return $state;
-                    })
-                    ->limit(15)
-                    ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
-
-                Tables\Columns\TextColumn::make('proyect.titulo')
+                Tables\Columns\TextColumn::make('proyect.titulo_compuesto')
                     ->label('Proyecto')
-                    ->tooltip(function (TextColumn $column): ?string {
-                        $state = $column->getState();
-                        if (strlen($state) <= 15) {
-                            return null;
-                        }
-                        return $state;
-                    })
-                    ->limit(15)
+                    // ->view('tables.columns.title-proyect-column')
+                    ->placeholder('Sin registro.')
                     ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('cot')
-                    ->label('Cotizacion')
+                    ->label('Cotización')
+                    ->placeholder('Sin registro.')
                     ->toggleable(isToggledHiddenByDefault: true)
-                    ->formatStateUsing(function (string $state) {
-                        if ($state == 'SC') {
-                            return 'Sin cotización.';
-                        } elseif (count(explode('-', $state)) == 2) {
-                            return 'COT-' . $state;
-                        }
-                        return $state;
-                    })
+                    ->formatStateUsing(fn(string $state) => !is_null($state) ?? 'COT-' . $state)
                     ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('factura')
-                    ->alignCenter()
+                    ->label('Factura')
+                    ->placeholder('Sin registro.')
                     ->toggleable(isToggledHiddenByDefault: true)
+                    ->badge()
+                    // ->formatStateUsing(fn(?string $state) => !is_null($state) ?? 'COT-' . $state)
                     ->sortable()
-                    ->searchable()
-                    ->columnSpan(1),
-
-                Tables\Columns\TextColumn::make('monto_proyecto')
-                    ->label('Monto proyectado')
-                    ->currency('clp')
-                    ->sortable()
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true)
-                    ->columnSpan(1),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('cargo')
                     ->numeric()
                     ->placeholder('$0')
                     ->currency('clp')
-                    ->summarize(Sum::make()->label('Cargos'))
+                    ->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Cargos'))
                     ->sortable()
                     ->searchable()
                     ->columnSpan(1),
@@ -353,30 +456,10 @@ class MovementResource extends Resource
                     ->numeric()
                     ->placeholder('$0')
                     ->currency('clp')
-                    ->summarize(Sum::make()->label('Ingresos'))
+                    ->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Ingresos'))
                     ->sortable()
                     ->searchable()
                     ->columnSpan(1),
-
-                // Tables\Columns\ToggleColumn::make('estado')
-                //     ->label('Pagado')
-                //     ->sortable()
-                //     ->searchable()
-                //     //   ->badge()
-                //     ->placeholder('No pago')
-                //   ->color(fn (string $state): string => match ($state) {
-                //     null => 'gray',
-                //     '1' => 'success',
-                //   })
-                //   ->formatStateUsing(function (string $state) {
-                //   return $state;
-                //     if ($state) {
-                //       return 'PAGADO';
-                //     } elseif ($state === \null) {
-                //       return "";
-                //     }
-                //   })
-                //     ->columnSpan(1),
             ])
             ->filters([
                 DateRangeFilter::make('created_at')
@@ -386,47 +469,35 @@ class MovementResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ActionGroup::make([
-                    // Tables\Actions\Action::make('pagar_proyect')
-                    //     // ->hidden(fn (Model $record): bool => ($record->id_proyecto > 0) ? true : false)
-                    //     ->label('Pagar proyecto relacionado')
-                    //     ->color('info')
-                    //     ->icon('heroicon-o-archive-box-arrow-down')
-                    //     ->modalHeading(fn(Model $record): string => 'Cambias estado a "' . $record->proyect->titulo . '" de ' . $record->proyect->customer->nombre)
-                    //     ->modalSubmitActionLabel('Guardar')
-                    //     ->modalFooterActionsAlignment('right')
-                    //     ->modalWidth('md')
-                    //     ->requiresConfirmation()
-                    //     ->action(function (array $data, Model $record): void {
-                    //         $proyect = Proyect::find($record->id_proyecto);
-                    //         $proyect->estado = 1;
-                    //         $proyect->save();
-                    //     })
-                    //     ->form(function (?Model $record): array {
-                    //         $relatedMovements = Movement::where('id_proyecto', '=', $record->id_proyecto)->get();
-                    //         $relatedCargos = $relatedMovements->sum('cargo');
-                    //         $relatedIngresos = $relatedMovements->sum('ingreso');
-                    //         $diff = $relatedCargos - $relatedIngresos;
-                    //         $countPagos = $relatedMovements->where('tipo', 'pago')->count();
-                    //         $color = $countPagos > 0 ? 'warning' : 'danger';
-                    //         $mensaje = $countPagos > 0 ? 'Verifica que no exista deuda antes de cambiar el estado del proyecto.' : '¡El proyecto no registra pagos! Verifica que no exista deuda antes de cambiar el estado del proyecto.';
-                    //         // $countVentas = $relatedMovements->where('tipo', 'venta')->count();
-                    //         // dd($countVentas);
-                    //         return [
-                    //             Forms\Components\Grid::make(3)
-                    //                 ->schema([
-                    //                     Forms\Components\Placeholder::make('cargos')
-                    //                         ->content(number_format($relatedCargos, 0, 0, '.')),
-                    //                     Forms\Components\Placeholder::make('Ingresos')
-                    //                         ->content(number_format($relatedIngresos, 0, 0, '.')),
-                    //                     Forms\Components\Placeholder::make('diferencia')
-                    //                         ->content(number_format($diff, 0, 0, '.')),
-                    //                 ]),
-                    //             Forms\Components\Placeholder::make('aviso')
-                    //                 ->hintColor($color)
-                    //                 ->hint($mensaje),
-                    //         ];
-                    //     }),
-                    Tables\Actions\EditAction::make(),
+                    Tables\Actions\CreateAction::make()
+                        ->label('Crear otro')
+                        ->icon('heroicon-s-arrow-path')
+                        ->stickyModalHeader()
+                        ->stickyModalFooter()
+                        // ->fillForm(fn(Movement $record): array => [
+                        //     'proyect_data.id_cliente' => $record->proyect->customer->id,
+                        // ])
+                        ->using(function (array $data, string $model): Model {
+                            $data['id_proyecto'] = $data['proyect_data']['id'];
+                            $data['factura'] = $data['factura_pendiente'] ? 'PEND' : $data['factura'];
+                            $data['cargo'] = ($data['tipo'] == 'VENTA') ? $data['valor'] : null;
+                            $data['ingreso'] = ($data['tipo'] == 'PAGO') ? $data['valor'] : null;
+                            $data['user_id'] = Auth()->id();
+                            // dd($data);
+                            return $model::create($data);
+                        }),
+                    Tables\Actions\EditAction::make()
+                        ->stickyModalHeader()
+                        ->stickyModalFooter()
+                        ->using(function (Model $record, array $data): Model {
+                            $data['id_proyecto'] = $data['proyect_data']['id'];
+                            $data['factura'] = $data['factura_pendiente'] ? 'PEND' : $data['factura'];
+                            $data['cargo'] = ($data['tipo'] == 'VENTA') ? $data['valor'] : null;
+                            $data['ingreso'] = ($data['tipo'] == 'PAGO') ? $data['valor'] : null;
+                            // dd($data);
+                            $record->update($data);
+                            return $record;
+                        }),
                     Tables\Actions\DeleteAction::make(),
                     Tables\Actions\ForceDeleteAction::make(),
                     Tables\Actions\RestoreAction::make(),
@@ -447,9 +518,10 @@ class MovementResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListMovements::route('/'),
-            'create' => Pages\CreateMovement::route('/create'),
-            'edit' => Pages\EditMovement::route('/{record}/edit'),
+            'index' => Pages\ManageMovements::route('/'),
+            // 'create' => Pages\CreateMovement::route('/create'),
+            'view' => Pages\ViewMovement::route('/{record}'),
+            // 'edit' => Pages\EditMovement::route('/{record}/edit'),
         ];
     }
     public static function getWidgets(): array

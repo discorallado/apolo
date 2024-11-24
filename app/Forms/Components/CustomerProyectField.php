@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
@@ -53,7 +54,7 @@ class CustomerProyectField extends Field
         return [
             Forms\Components\Section::make('Proyecto')
                 ->icon('heroicon-s-tag')
-                ->description('Indique cliente y proyecto al que pertenece este documento.')
+                ->description('Datos de cliente y proyecto.')
                 ->columns(2)
                 ->schema([
                     // Forms\Components\Grid::make(2)
@@ -82,18 +83,24 @@ class CustomerProyectField extends Field
                         ->searchable()
                         ->hintAction(
                             Action::make('Ver proyecto')
-                                ->url(fn($state) =>  $state > 0 ? ProyectResource::getUrl('view', ['record' => $state]) : null)
+                                ->url(fn($state) =>  $state ? ProyectResource::getUrl('view', ['record' => $state]) : null)
                                 ->openUrlInNewTab()
                                 ->icon('heroicon-s-rectangle-stack')
                         )
-                        ->createOptionForm([
-                            Forms\Components\TextInput::make('titulo')
-                                ->required(),
-                            Forms\Components\TextInput::make('monto_proyectado')
-                                ->numeric()
-                                ->prefix('$')
-                                ->required(),
-                        ])
+                        ->createOptionForm(
+                            function (Form $form) {
+
+                                ProyectResource::form($form);
+                            }
+                        )
+                        //     [
+                        //     Forms\Components\TextInput::make('titulo')
+                        //         ->required(),
+                        //     Forms\Components\TextInput::make('monto_proyectado')
+                        //         ->numeric()
+                        //         ->prefix('$')
+                        //         ->required(),
+                        // ])
                         ->createOptionUsing(function (array $data, Get $get) {
                             $data['id_cliente'] = $get('id_cliente');
                             $data['user_id'] = auth()->user()->id;
@@ -115,7 +122,6 @@ class CustomerProyectField extends Field
     protected function setUp(): void
     {
         parent::setUp();
-
         $this->afterStateHydrated(function (CustomerProyectField $component, ?Model $record) {
             $proyect = $record?->getRelationValue($this->getRelationship());
             $array_proyecto = $proyect?->toArray();

@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\Management;
 
 use App\Filament\Resources\Management\ProyectResource\Pages;
+use App\Filament\Resources\Management\ProyectResource\Pages\CreateProyect;
 use App\Filament\Resources\Management\ProyectResource\RelationManagers\MovementsRelationManager;
 use App\Filament\Resources\Management\ProyectResource\RelationManagers\PurchasesRelationManager;
 use App\Filament\Resources\Management\ProyectResource\RelationManagers\SalesRelationManager;
+use App\Models\Management\Customer;
 use App\Models\Management\Movement;
 use App\Models\Management\Proyect;
+use App\Tables\Columns\ProyectStatusColumn;
 use Filament\Forms;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Components\SpatieTagsInput;
@@ -35,6 +38,9 @@ use Filament\Infolists\Components\TextEntry;
 use Filament\Support\Enums\FontWeight;
 use Illuminate\Contracts\Support\Htmlable;
 use Pelmered\FilamentMoneyField\Infolists\Components\MoneyEntry;
+use Filament\Infolists\Components\SpatieMediaLibraryImageEntry;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Resources\Pages\EditRecord;
 
 class ProyectResource extends Resource
 {
@@ -54,7 +60,7 @@ class ProyectResource extends Resource
 
 	public static function getRecordTitle(?Model $record): string|Htmlable|null
 	{
-		return 'prssoyecto ' . $record?->titulo;
+		return 'proyecto ' . $record?->titulo;
 	}
 
 	public static function infolist(Infolist $infolist): Infolist
@@ -66,7 +72,9 @@ class ProyectResource extends Resource
 				Grid::make(1)
 					->columnSpan(2)
 					->schema([
-						Section::make('Datos del proyecto')
+						Section::make('Detalles')
+							->icon('heroicon-o-document-magnifying-glass')
+							->description('Datos del proyeco.')
 							->schema([
 								TextEntry::make('titulo')
 									->columnSpan(2),
@@ -74,34 +82,66 @@ class ProyectResource extends Resource
 									->label('Cliente')
 									->columnSpan(1),
 								MoneyEntry::make('monto_proyectado')
+									->placeholder('Sin monto.')
 									->columnSpan(1),
-
 								TextEntry::make('detalle')
-									// ->columnSpanFull()
+									->placeholder('Sin detalles.')
 									->columnSpan(2),
 								SpatieTagsEntry::make('tags')
-									// ->columnSpanFull()
+									->placeholder('Sin tags.')
 									->columnSpan(2),
 							])
 							->columns(2)
 							->columnSpan(2),
-						Section::make('Financieros')
+						Section::make('Contable')
+							->icon('heroicon-o-banknotes')
+							->description('Resumen de ventas y pagos.')
 							->schema([
-								MoneyEntry::make('cargos')
-									->state(function (Model $record): float {
-										return $record->movements->sum('cargo');
-									})
-									->columnSpan(1),
-								MoneyEntry::make('ingresos')
-									->state(function (Model $record): float {
-										return $record->movements->sum('ingreso');
-									})
-									->columnSpan(1),
-								MoneyEntry::make('deuda')
-									->state(function (Model $record): float {
-										return $record->movements->sum('cargo') - $record->movements->sum('ingreso');
-									})
-									->columnSpan(1),
+								Grid::make(3)
+									->schema([
+										MoneyEntry::make('cargos')
+											->state(function (Model $record): float {
+												return $record->movements->sum('cargo');
+											})
+											->columnSpan(1),
+										MoneyEntry::make('ingresos')
+											->state(function (Model $record): float {
+												return $record->movements->sum('ingreso');
+											})
+											->columnSpan(1),
+										MoneyEntry::make('deuda')
+											->state(function (Model $record): float {
+												return $record->movements->sum('cargo') - $record->movements->sum('ingreso');
+											})
+											->columnSpan(1),
+									]),
+								Grid::make(2)
+									->schema([
+										TextEntry::make('sales')
+											->label('Facturas emitidas')
+											->state(function (Model $record): float {
+												return $record->sales->count();
+											})
+											->suffix(fn($state): string => ($state == 1) ? ' factura' : ' facturas'),
+										TextEntry::make('purchases')
+											->label('Facturas de compras')
+											->state(function (Model $record): float {
+												return $record->purchases->count();
+											})
+											->suffix(fn($state): string => ($state == 1) ? ' factura' : ' facturas'),
+									])
+							])
+							->columns(3)
+							->columnSpan(2),
+						Section::make('Archivos')
+							->icon('heroicon-s-paper-clip')
+							->description('Documentos adjuntos.')
+							->schema([
+								ViewEntry::make('proyect_files')
+									->label(false)
+									->view('infolists.components.files-entry')
+									->state(fn(Model $record) => $record->getMedia('proyectos'))
+									->columnSpanFull(),
 							])
 							->columns(3)
 							->columnSpan(2),
@@ -111,15 +151,21 @@ class ProyectResource extends Resource
 					->columnSpan(1)
 					->schema([
 						Section::make('Información del registro')
+							->icon('heroicon-s-information-circle')
 							->schema([
 								TextEntry::make('created_at')
-									->label('Creado'),
+									->label('Creado')
+									->since(),
 								TextEntry::make('updated_at')
-									->label('Última modificación'),
+									->label('Última modificación')
+									->since()
+									->placeholder('sin modificaciones.'),
 								TextEntry::make('user.name')
+									->formatStateUsing(fn(string $state): string => strtoupper($state))
 									->icon('heroicon-s-user'),
 							]),
 						Section::make('Estado del proyecto')
+							->icon('heroicon-o-presentation-chart-bar')
 							->schema([
 								TextEntry::make('estado')
 									->label(false)
@@ -127,21 +173,6 @@ class ProyectResource extends Resource
 									->extraAttributes(['class' => 'items-center'])
 									->color(fn(bool $state) => $state ? 'success' : 'warning')
 									->formatStateUsing(fn(bool $state) => $state ? 'Proyecto finalizado' : 'Proyecto activo'),
-							]),
-						Section::make('Documentos Tributarios')
-							->schema([
-								TextEntry::make('sales')
-									->label('Facturas emitidas')
-									->state(function (Model $record): float {
-										return $record->sales->count();
-									})
-									->suffix(' (facturas)'),
-								TextEntry::make('purchases')
-									->label('Facturas de compras')
-									->state(function (Model $record): float {
-										return $record->purchases->count();
-									})
-									->suffix(' (facturas)'),
 							]),
 					]),
 			]);
@@ -152,6 +183,8 @@ class ProyectResource extends Resource
 		return $form
 			->schema([
 				Forms\Components\Section::make('Detalles')
+					->icon('heroicon-o-document-magnifying-glass')
+					->description('Indique datos de identificación')
 					->columns(2)
 					->schema([
 						Forms\Components\TextInput::make('titulo')
@@ -160,13 +193,44 @@ class ProyectResource extends Resource
 							->columnSpan(2),
 						Forms\Components\Select::make('id_cliente')
 							->label('Cliente')
-							->relationship('customer', 'nombre')
+							->options(Customer::all()->pluck('nombre', 'id'))
+							->relationship(name: 'customer', titleAttribute: 'nombre')
+							->createOptionForm([
+								Forms\Components\TextInput::make('nombre')
+									->required(),
+							])
+							->createOptionUsing(function (array $data) {
+								$data['user_id'] = auth()->id();
+								$cliente = new Customer();
+								$cliente->fill($data);
+								$cliente->save();
+								return $cliente->getKey();
+							})
 							->searchable()
+							->preload()
 							->required()
 							->columnSpan(1),
+
 						MoneyInput::make('monto_proyectado')
 							->columnSpan(1),
-
+						Forms\Components\ToggleButtons::make('estado')
+							->required()
+							->inline()
+							->columnSpan(2)
+							->default(0)
+							->hiddenOn(['create', 'view.create'])
+							->options([
+								0 => 'Activo',
+								1 => 'Pagado',
+							])
+							->icons([
+								0 => 'heroicon-o-pencil',
+								1 => 'heroicon-o-clock',
+							])
+							->colors([
+								0 => 'info',
+								1 => 'success',
+							]),
 						Forms\Components\Textarea::make('detalle')
 							->maxLength(65535)
 							->columnSpanFull()->columnSpan(2),
@@ -174,8 +238,14 @@ class ProyectResource extends Resource
 							->type('proyectos')
 							->columnSpanFull()
 							->columnSpan(2),
+					]),
+
+				Forms\Components\Section::make('Archivos')
+					->icon('heroicon-s-paper-clip')
+					->description('Archivos adjuntos.')
+					->schema([
 						SpatieMediaLibraryFileUpload::make('proyect_files')
-							->label('Archivos')
+							->label(false)
 							->collection('proyectos')
 							->multiple()
 							->openable()
@@ -183,35 +253,10 @@ class ProyectResource extends Resource
 							->deletable()
 							->previewable()
 							->columnSpanFull(),
-					])
-					->columnSpan(['lg' => fn(?Proyect $record) => $record === null ? 3 : 2]),
 
-				Forms\Components\Grid::make(1)
-					->columnSpan(1)
-					->schema([
-						Forms\Components\Section::make('Información del registro')
-							->schema([
-								Forms\Components\Placeholder::make('created_at')
-									->label('Creado')
-									->content(fn(Proyect $record): ?string => $record->created_at?->diffForHumans()),
-								Forms\Components\Placeholder::make('updated_at')
-									->label('Última modificación')
-									->extraAttributes(['icon' => 'heroicon-o-rectangle-stack'])
-									->content(fn(Proyect $record): ?string => $record->updated_at ?? 'Sin modificaciones.'),
-								Forms\Components\ViewField::make('usuario')
-									->view('forms.components.user-field'),
-							])
-							->columnSpan(['lg' => 1]),
-						Forms\Components\Section::make('Estado del proyecto')
-							->schema([
-								Forms\Components\Select::make('estado')
-									->options([1 => 'Finalizado', 0 => 'Activo'])
-									->label(false)
-									->required(),
-							])
-							->columnSpan(['lg' => 1]),
+
 					])
-					->hidden(fn(?Proyect $record) => $record === null),
+				// ->hidden(fn(?Proyect $record) => $record === null),
 			])
 			->columns(3);
 	}
@@ -232,62 +277,74 @@ class ProyectResource extends Resource
 			->columns([
 				Tables\Columns\TextColumn::make('created_at')
 					->date(),
-				Tables\Columns\TextColumn::make('titulo')
-					->limit(30)
-					->tooltip(fn(TextColumn $column): ?string => strlen($column->getState()) <= 30 ? null : $column->getState())
-					->label('Título')
-					->columnSpan(3)
-					->toggleable()
-					->sortable()
-					->searchable(),
-				Tables\Columns\TextColumn::make('customer.nombre')
-					->limit(15)
-					->tooltip(fn(TextColumn $column): ?string => strlen($column->getState()) <= 15 ? null : $column->getState())
-					->label('Cliente')
+
+				// Tables\Columns\TextColumn::make('title')
+				// 	->limit(30)
+				// 	->tooltip(fn(TextColumn $column): ?string => strlen($column->getState()) <= 30 ? null : $column->getState())
+				// 	->label('Título')
+				// 	->columnSpan(3)
+				// 	// ->toggleable()
+				// 	->sortable()
+				// 	->searchable(),
+				// Tables\Columns\TextColumn::make('customer.nombre')
+				// 	->limit(15)
+				// 	->tooltip(fn(TextColumn $column): ?string => strlen($column->getState()) <= 15 ? null : $column->getState())
+				// 	->label('Cliente')
+				// 	->columnSpan(2)
+				// 	// ->toggleable()
+				// 	->sortable()
+				// 	->searchable(),
+				Tables\Columns\TextColumn::make('titulo_compuesto')
+					->label('Titulo')
 					->columnSpan(2)
-					->toggleable()
+					// ->toggleable()
 					->sortable()
 					->searchable(),
 				MoneyColumn::make('monto_proyectado')
 					->label('Monto')
 					->placeholder('Sin ingresos')
 					// ->currency('clp')
-					->summarize(Sum::make()->label('Ingreso'))
-					->toggleable()
+					->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Monto'))
+					// ->toggleable()
 					->sortable(),
 				MoneyColumn::make('movements_sum_cargo')->sum('movements', 'cargo')
 					->label('Cargos')
 					// ->currency('clp')
-					->summarize(Sum::make()->label('Cargos'))
+					->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Cargos'))
 					->placeholder('Sin cargos')
-					->toggleable()
+					// ->toggleable()
 					->sortable(),
 				MoneyColumn::make('movements_sum_ingreso')->sum('movements', 'ingreso')
 					->label('Ingresos')
 					->placeholder('Sin ingresos')
-					// ->currency('clp')
-					->summarize(Sum::make()->label('Ingreso'))
-					->toggleable()
+					->currency('clp')
+					->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Ingresos'))
+					// ->toggleable()
 					->sortable(),
-				Tables\Columns\TextColumn::make('user.name')
-					->label('Usuario')
-					->searchable()
+				// Tables\Columns\TextColumn::make('estatus')
+				// 	// Tables\Columns\TextColumn::make('ciudad')
+				// 	// ->view('tables.columns.')
+				// 	->placeholder('Sin registro.'),
+				// ProyectStatusColumn::make('estatus')
+				// 	// Tables\Columns\TextColumn::make('ciudad')
+				// 	// ->view('tables.columns.')
+				// 	->placeholder('Sin registro.'),
+				Tables\Columns\TextColumn::make('created_at')
+					->label('Creado')
+					->date()
 					->sortable()
+					->searchable()
 					->toggleable(isToggledHiddenByDefault: true),
-				// Tables\Columns\TextColumn::make('created_at')
-				// 	->label('Creado')
-				// 	->date()
-				// 	->sortable()
-				// 	->searchable()
-				// 	->toggleable(isToggledHiddenByDefault: true),
 				Tables\Columns\TextColumn::make('updated_at')
 					->label('Modificado')
+					->placeholder('Sin modificaciones.')
 					->date()
 					->sortable()
 					->searchable()
 					->toggleable(isToggledHiddenByDefault: true),
 				Tables\Columns\TextColumn::make('deleted_at')
 					->label('Eliminado')
+					->placeholder('Sin eliminar.')
 					->date()
 					->sortable()
 					->searchable()
@@ -301,90 +358,34 @@ class ProyectResource extends Resource
 			])
 			->actions([
 				Tables\Actions\Action::make('pagar_proyect')
-					->disabled(function (?Model $record) {
-						$estado = ProyectResource::estadoPagos($record);
-						if ($record->estado) {
-							return true;
-						} else {
-							if (!empty($estado)) {
-								if ($estado['diff'] > 0) {
-									return false;
-								} else {
-									if ($estado['ingresos'] > 0) {
-										return false;
-									} else {
-										return true;
-									}
-								}
-							} else {
-								return true;
-							}
-						}
+					->disabled(fn(?Model $record) => match ($record->estatus) {
+						'inactivo' => true,
+						'activo' => false,
+						'finalizar' => false,
+						'finalizado' => true
 					})
-					->label(function (Model $record) {
-						$estado = ProyectResource::estadoPagos($record);
-						if ($record->estado) {
-							return 'Finalizado';
-						} else {
-							if (!empty($estado)) {
-								if ($estado['diff'] > 0) {
-									return 'Activo';
-								} else {
-									if ($estado['ingresos'] > 0) {
-										return 'Finalizar';
-									} else {
-										return 'Activo';
-									}
-								}
-							} else {
-								return 'Inactivo';
-							}
-						}
+					->label(fn(?Model $record) => match ($record->estatus) {
+						'inactivo' => 'Inactivo',
+						'activo' => 'Activo',
+						'finalizar' => 'Finalizar',
+						'finalizado' => 'Finalizado'
 					})
-					->icon(function (Model $record) {
-						$estado = ProyectResource::estadoPagos($record);
-						if ($record->estado) {
-							return 'heroicon-o-check-badge';
-						} else {
-							if (!empty($estado)) {
-								if ($estado['diff'] > 0) {
-									return 'heroicon-s-banknotes';
-								} else {
-									if ($estado['ingresos'] > 0) {
-										return 'heroicon-s-check-circle';
-									} else {
-										return 'heroicon-s-banknotes';
-									}
-								}
-							} else {
-								return 'heroicon-s-exclamation-triangle';
-							}
-						}
+					->icon(fn(?Model $record) => match ($record->estatus) {
+						'inactivo' => 'heroicon-o-banknotes',
+						'activo' => 'heroicon-o-banknotes',
+						'finalizar' => 'heroicon-o-check-circle',
+						'finalizado' => 'heroicon-o-check-badge'
 					})
 					->iconPosition(IconPosition::After)
-					->color(function (Model $record) {
-						$estado = ProyectResource::estadoPagos($record);
-						if ($record->estado) {
-							return 'primary';
-						} else {
-							if (!empty($estado)) {
-								if ($estado['diff'] > 0) {
-									return 'warning';
-								} else {
-									if ($estado['ingresos'] > 0) {
-										return 'success';
-									} else {
-										return 'warning';
-									}
-								}
-							} else {
-								return 'danger';
-							}
-						}
+					->color(fn(?Model $record) => match ($record->estatus) {
+						'inactivo' => 'danger',
+						'activo' => 'warning',
+						'finalizar' => 'success',
+						'finalizado' => 'primary'
 					})
-					->size(ActionSize::ExtraSmall)
+					// ->hidden(CustomerResource\RelationManagers\ProyectsRelationManager::class)
 					->button()
-					->outlined()
+					// ->outlined()
 					->modalHeading(fn(Model $record): string => 'Finalizar proyecto "' . $record->titulo . '" de ' .  $record->customer->nombre)
 					->modalSubmitActionLabel('Guardar')
 					->form(function (Model $record) {
@@ -451,7 +452,7 @@ class ProyectResource extends Resource
 	public static function getPages(): array
 	{
 		return [
-			'index' => Pages\ListProyects::route('/'),
+			'index' => Pages\ManageProyects::route('/'),
 			// 'create' => Pages\CreateProyect::route('/create'),
 			// 'index' => Pages\ManageProyects::route('/'),
 			'view' => Pages\ViewProyect::route('/{record}'),

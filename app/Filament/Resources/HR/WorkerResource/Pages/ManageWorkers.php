@@ -17,7 +17,7 @@ class ManageWorkers extends ManageRecords
         return [
             Actions\CreateAction::make()
                 ->button()
-                // ->outlined()
+                //
                 ->using(function (array $data, string $model): Model {
                     $data['user_id'] = auth()->id();
                     // dd($data);

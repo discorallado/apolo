@@ -13,7 +13,6 @@ use App\Models\Management\Purchase;
 use App\Models\Management\Supplier;
 use App\Settings\GeneralSettings;
 use App\Tables\Columns\ProyectAsignColumn;
-
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -210,7 +209,7 @@ class PurchaseResource extends Resource
                     ->numeric()
                     ->currency('CLP')
                     ->searchable()
-                    ->summarize(Sum::make()->label('Total')->money('clp'))
+                    ->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Total'))
                     ->sortable(),
 
                 ProyectAsignColumn::make('proyect.titulo')
