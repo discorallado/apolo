@@ -182,16 +182,18 @@ class ProyectResource extends Resource
 	{
 		return $form
 			->schema([
-				Forms\Components\Section::make('Detalles')
-					->icon('heroicon-o-document-magnifying-glass')
-					->description('Indique datos de identificación')
+				Forms\Components\Fieldset::make('Detalles')
+					// ->icon('heroicon-o-document-magnifying-glass')
+					// ->description('Indique datos de identificación')
 					->columns(2)
 					->schema([
 						Forms\Components\TextInput::make('titulo')
+							->prefixIcon('heroicon-s-pencil')
 							->required()
 							->maxLength(255)
 							->columnSpan(2),
 						Forms\Components\Select::make('id_cliente')
+							->prefixIcon('heroicon-s-user')
 							->label('Cliente')
 							->options(Customer::all()->pluck('nombre', 'id'))
 							->relationship(name: 'customer', titleAttribute: 'nombre')
@@ -231,18 +233,18 @@ class ProyectResource extends Resource
 								0 => 'info',
 								1 => 'success',
 							]),
-						Forms\Components\Textarea::make('detalle')
-							->maxLength(65535)
-							->columnSpanFull()->columnSpan(2),
 						SpatieTagsInput::make('tags')
+							->prefixIcon('heroicon-s-tag')
 							->type('proyectos')
 							->columnSpanFull()
 							->columnSpan(2),
+						Forms\Components\RichEditor::make('detalle')
+							->columnSpanFull(),
 					]),
 
 				Forms\Components\Section::make('Archivos')
 					->icon('heroicon-s-paper-clip')
-					->description('Archivos adjuntos.')
+					// ->description('Archivos adjuntos.')
 					->schema([
 						SpatieMediaLibraryFileUpload::make('proyect_files')
 							->label(false)

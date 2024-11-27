@@ -53,6 +53,15 @@ class Movement extends Model implements HasMedia
         // 'publisher_id',
     ];
 
+    public function getDetalleAttribute($value)
+    {
+        return strtoupper($value);
+    }
+    public function getObservacionesAttribute($value)
+    {
+        return strtoupper($value);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');

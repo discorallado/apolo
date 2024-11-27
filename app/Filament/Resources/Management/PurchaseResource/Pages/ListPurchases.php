@@ -17,10 +17,10 @@ class ListPurchases extends ListRecords
 		return [
 			Actions\CreateAction::make(),
 			Actions\ImportAction::make()
-			->label('Importar compras SII')
-			->color('warning')
-			->modalDescription(null)
-			->importer(PurchaseImporter::class),
+				->label('Importar compras SII')
+				->color('warning')
+				->modalDescription(null)
+				->importer(PurchaseImporter::class),
 		];
 	}
 

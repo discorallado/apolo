@@ -80,6 +80,7 @@ class MovementResource extends Resource
                             ->description('Detalles del movimiento')
                             ->schema([
                                 TextEntry::make('proyect.customer.nombre')
+                                    ->icon('heroicon-s-user')
                                     ->columnSpan(1)
                                     ->formatStateUsing(fn(string $state): string => strtoupper($state))
                                     ->label('Cliente')
@@ -90,6 +91,7 @@ class MovementResource extends Resource
                                             ->icon('heroicon-o-link')
                                     ),
                                 TextEntry::make('proyect.titulo')
+                                    ->icon('heroicon-s-rectangle-stack')
                                     ->label('Proyecto')
                                     ->formatStateUsing(fn(string $state): string => strtoupper($state))
                                     ->hintAction(
@@ -101,19 +103,23 @@ class MovementResource extends Resource
                                 ComponentsGrid::make(3)
                                     ->schema([
                                         TextEntry::make('fecha')
+                                            ->icon('heroicon-s-calendar-days')
                                             ->date()
                                             ->columnSpan(1),
                                         TextEntry::make('cot')
+                                            ->icon('heroicon-s-document-text')
                                             ->label('Cotización')
                                             ->placeholder('Sin cotización.')
                                             ->prefix('COT-'),
                                         TextEntry::make('factura')
+                                            ->icon('heroicon-s-receipt-percent')
                                             ->label('Nro. factura')
                                             ->placeholder('Sin factura.')
                                             ->prefix('N° '),
                                     ]),
                                 TextEntry::make('detalle')
                                     ->placeholder('Sin detalles.')
+                                    ->html()
                                     ->columnSpanFull(),
                             ]),
                         Section::make('Contable')
@@ -122,10 +128,8 @@ class MovementResource extends Resource
                             ->columns(3)
                             ->columnSpan(2)
                             ->schema([
-
                                 TextEntry::make('tipo')
                                     ->badge()
-                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
                                     ->icon(fn(string $state): string => match ($state) {
                                         'VENTA' => 'heroicon-o-shopping-cart',
                                         'PAGO' => 'heroicon-o-wallet',
@@ -141,7 +145,9 @@ class MovementResource extends Resource
                                 MoneyEntry::make('valor')
                                     ->state(fn(?Model $record) => $record->cargo ?? $record->ingreso)
                                     ->columnSpan(1),
-                                Fieldset::make('del Proyecto')
+
+
+                                Fieldset::make('Resumen del Proyecto')
                                     ->columns(4)
                                     ->schema([
                                         MoneyEntry::make('monto_proyectado')
@@ -228,10 +234,11 @@ class MovementResource extends Resource
                 Forms\Components\Section::make('Detalles')
                     ->columns(2)
                     ->icon('heroicon-o-arrows-right-left')
-                    ->description('Detalles del movimiento')
+                    // ->description('Detalles del movimiento')
                     ->schema([
                         Forms\Components\DatePicker::make('fecha')
                             ->columnSpan(1)
+                            ->prefixIcon('heroicon-s-calendar-days')
                             ->format('Y-m-d')
                             ->default(now())
                             ->required(),
@@ -354,16 +361,17 @@ class MovementResource extends Resource
                                     ->inline(false),
                             ]),
                         Forms\Components\RichEditor::make('detalle')
+                            ->label('Descripción')
                             ->columnSpanFull()
                             ->disableAllToolbarButtons()
                             ->toolbarButtons(['bold', 'bulletList', 'italic', 'link', 'orderedList', 'redo', 'strike', 'undo'])
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('Extras')
+                Forms\Components\Section::make('Anexos')
                     ->columns(2)
-                    ->collapsed()
-                    ->description('Información extra')
+                    // ->collapsed()
+                    // ->description('Información extra')
                     ->icon('heroicon-o-paper-clip')
                     ->schema([
                         SpatieMediaLibraryFileUpload::make('movement_files')

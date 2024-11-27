@@ -3,6 +3,7 @@
 namespace App\Models\Management;
 
 use App\Models\User;
+use App\Settings\GeneralSettings;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,11 +36,21 @@ class Purchase extends Model implements HasMedia
         // 'forma_pago',
         'neto',
         'iva',
-        'tolal',
+        'total',
         'user_id',
         // 'periodo',
         // 'ano',
     ];
+
+
+    public function getDTOAttribute()
+    {
+        // return strtoupper(app(GeneralSettings::class)->comunas[$this->id_ciudad]);
+        // return  strtoupper(GeneralSettings->comunas[(int)$this->ciudad]);
+        $arreglo = collect(app(GeneralSettings::class)->codigos_dt)->pluck('label', 'code');
+
+        return  strtoupper($arreglo[$this->tipo_doc]);
+    }
 
     public function user(): BelongsTo
     {

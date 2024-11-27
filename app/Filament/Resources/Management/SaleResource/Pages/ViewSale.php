@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Filament\Resources\Management\PurchaseResource\Pages;
+namespace App\Filament\Resources\Management\SaleResource\Pages;
 
-use App\Filament\Resources\Management\PurchaseResource;
+use App\Filament\Resources\Management\SaleResource;
 use Filament\Actions;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
-class ViewPurchase extends ViewRecord
+class ViewSale extends ViewRecord
 {
-    protected static string $resource = PurchaseResource::class;
+    protected static string $resource = SaleResource::class;
 
     protected function getHeaderActions(): array
     {

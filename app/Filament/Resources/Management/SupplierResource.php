@@ -9,10 +9,12 @@ use App\Settings\GeneralSettings;
 use Closure;
 use Dotenv\Util\Str;
 use Filament\Forms;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
 use Filament\Forms\Form;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -90,6 +92,18 @@ class SupplierResource extends Resource
                                     ->columnSpan(1)
                                     ->prefix('+56'),
                             ]),
+                        Section::make('Archivos')
+                            ->icon('heroicon-s-paper-clip')
+                            ->description('Documentos adjuntos.')
+                            ->schema([
+                                ViewEntry::make('supplier_files')
+                                    ->label(false)
+                                    ->view('infolists.components.files-entry')
+                                    ->state(fn(Model $record) => $record->getMedia('proveedores'))
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(3)
+                            ->columnSpan(2),
                     ]),
                 Grid::make(1)
                     ->columnSpan(1)
@@ -163,7 +177,22 @@ class SupplierResource extends Resource
                                     ->tel()
                                     ->maxLength(50),
 
-                            ])
+                            ]),
+                        Forms\Components\Section::make('Archivos')
+                            ->icon('heroicon-o-paper-clip')
+                            ->collapsed()
+                            // ->description('Archivos adjuntos.')
+                            ->schema([
+                                SpatieMediaLibraryFileUpload::make('supplier_files')
+                                    ->label(false)
+                                    ->collection('proveedores')
+                                    ->multiple()
+                                    ->openable()
+                                    ->downloadable()
+                                    ->deletable()
+                                    ->previewable()
+                                    ->columnSpanFull(),
+                            ]),
                     ]),
             ])
             ->columns(3);

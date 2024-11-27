@@ -14,6 +14,12 @@ use Filament\Forms\Form;
 use Filament\Forms;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
+use Filament\Infolists\Components\Actions\Action as ActionsAction;
+use Filament\Infolists\Components\Grid;
+use Filament\Infolists\Components\Section;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Actions\Action;
@@ -25,6 +31,8 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Grouping\Group;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Model;
+use Pelmered\FilamentMoneyField\Forms\Components\MoneyInput;
+use Pelmered\FilamentMoneyField\Infolists\Components\MoneyEntry;
 
 class SaleResource extends Resource
 {
@@ -52,6 +60,118 @@ class SaleResource extends Resource
         return 'venta #' . $record?->folio . ' del ' . $record?->fecha_dcto;
     }
 
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->columns(3)
+            ->schema([
+                Grid::make(1)
+                    ->columnSpan(2)
+                    ->schema([
+                        Section::make('Detalles')
+                            ->columns(2)
+                            ->icon('heroicon-o-arrows-right-left')
+                            ->description('Detalles del movimiento')
+                            ->schema([
+                                TextEntry::make('proyect.customer.nombre')
+                                    ->icon('heroicon-s-user')
+                                    ->columnSpan(1)
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->label('Cliente')
+                                    ->hintAction(
+                                        ActionsAction::make('Ver cliente')
+                                            ->url(fn(?Model $record) => route('filament.apolo.resources.clientes.view', ['record' => $record->proyect->customer->id]))
+                                            ->openUrlInNewTab()
+                                            ->icon('heroicon-o-link')
+                                    ),
+                                TextEntry::make('proyect.titulo')
+                                    ->icon('heroicon-s-rectangle-stack')
+                                    ->label('Proyecto')
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->hintAction(
+                                        ActionsAction::make('Ver proyecto')
+                                            ->url(fn(?Model $record) => route('filament.apolo.resources.proyectos.view', ['record' => $record->proyect->id]))
+                                            ->openUrlInNewTab()
+                                            ->icon('heroicon-o-link')
+                                    ),
+                            ]),
+
+
+                        Section::make('Detalles')
+                            ->icon('heroicon-o-document-magnifying-glass')
+                            ->description('Datos de identificación')
+                            ->columns(2)
+                            ->columnSpan(2)
+                            ->schema([
+                                TextEntry::make('folio')
+                                    ->icon('heroicon-s-hashtag')
+                                    ->placeholder('sin registro.')
+                                    ->prefix('N° ')
+                                    ->columnSpan(1),
+                                TextEntry::make('fecha_dcto')
+                                    ->icon('heroicon-s-calendar-days')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(1),
+                                TextEntry::make('DTO')
+                                    ->label('Tipo documento')
+                                    ->icon('heroicon-s-document')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(1),
+
+                            ]),
+
+                        Section::make('Monto')
+                            ->icon('heroicon-o-document-magnifying-glass')
+                            ->columns(4)
+                            ->columnSpan(2)
+                            ->schema([
+                                MoneyEntry::make('neto')
+                                    ->columnSpan(1),
+                                MoneyEntry::make('iva')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(1),
+                                MoneyEntry::make('excento')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(1),
+                                MoneyEntry::make('total')
+                                    ->placeholder('sin registro.')
+                                    ->columnSpan(1),
+                            ]),
+
+                        // Section::make('Archivos')
+                        //     ->icon('heroicon-s-paper-clip')
+                        //     // ->description('Documentos adjuntos.')
+                        //     ->schema([
+                        //         ViewEntry::make('purchase_files')
+                        //             ->label(false)
+                        //             ->view('infolists.components.files-entry')
+                        //             ->state(fn(Model $record) => $record->getMedia('compras'))
+                        //             ->columnSpanFull(),
+                        //     ])
+                        //     ->columns(3)
+                        //     ->columnSpan(2),
+                    ]),
+                Grid::make(1)
+                    ->columnSpan(1)
+                    ->schema([
+                        Section::make('Información del registro')
+                            ->icon('heroicon-s-information-circle')
+                            ->schema([
+                                TextEntry::make('created_at')
+                                    ->label('Creado')
+                                    ->since(),
+                                TextEntry::make('updated_at')
+                                    ->label('Última modificación')
+                                    ->since()
+                                    ->placeholder('sin modificaciones.'),
+                                TextEntry::make('user.name')
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->icon('heroicon-s-user'),
+                            ])
+                    ]),
+            ]);
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -68,7 +188,7 @@ class SaleResource extends Resource
 
                         Forms\Components\Section::make('Detalles')
                             ->icon('heroicon-o-document-magnifying-glass')
-                            ->description('Indique los detalles del dcto. de compra.')
+                            // ->description('Indique los detalles del dcto. de compra.')
                             ->columns(2)
                             ->schema([
                                 Forms\Components\TextInput::make('folio')
@@ -78,9 +198,11 @@ class SaleResource extends Resource
                                     ->maxLength(50),
                                 Forms\Components\DatePicker::make('fecha_dcto')
                                     ->columnSpan(1)
+                                    ->prefixIcon('heroicon-s-calendar-days')
                                     ->default(now())
                                     ->required(),
                                 Forms\Components\Select::make('tipo_doc')
+                                    ->prefixIcon('heroicon-s-document')
                                     ->columnSpan(2)
                                     ->searchable()
                                     ->options(collect(app(GeneralSettings::class)->codigos_dt)->pluck('label', 'code'))
@@ -89,37 +211,29 @@ class SaleResource extends Resource
 
                         Forms\Components\Section::make('Montos')
                             ->icon('heroicon-s-currency-dollar')
-                            ->description('Indique solo el monto exento y el neto de la venta.')
+                            // ->description('Indique solo el monto exento y el neto de la venta.')
                             ->columns(2)
                             ->schema([
-                                Forms\Components\TextInput::make('exento')
-                                    ->numeric()
-                                    ->prefix('$')
+                                MoneyInput::make('exento')
                                     ->required()
                                     ->columnSpan(1)
                                     ->live(debounce: 500)
                                     ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                        $set('iva', round($get('neto') * 0.19, 0));
-                                        $set('total',  round($get('neto') + $get('neto') * 0.19 + $state, 0));
+                                        $set('iva', round((int)$get('neto') * 0.19, 0));
+                                        $set('total',  round((int)$get('neto') + (int)$get('neto') * 0.19 + (int)$state, 0));
                                     }),
-                                Forms\Components\TextInput::make('iva')
-                                    ->numeric()
-                                    ->prefix('$')
+                                MoneyInput::make('iva')
                                     ->readOnly()
                                     ->columnSpan(1),
-                                Forms\Components\TextInput::make('neto')
+                                MoneyInput::make('neto')
                                     ->required()
-                                    ->numeric()
-                                    ->prefix('$')
                                     ->columnSpan(1)
                                     ->live(debounce: 500)
                                     ->afterStateUpdated(function (Get $get, Set $set, $state) {
-                                        $set('iva', round($state * 0.19, 0));
-                                        $set('total', $state + round($state * 0.19, 0) + $get('exento'));
+                                        $set('iva', round((int)$state * 0.19, 0));
+                                        $set('total', (int)$state + round((int)$state * 0.19, 0) + (int)$get('exento'));
                                     }),
-                                Forms\Components\TextInput::make('total')
-                                    ->numeric()
-                                    ->prefix('$')
+                                MoneyInput::make('total')
                                     ->readOnly()
                                     ->columnSpan(1),
                             ]),
@@ -129,7 +243,7 @@ class SaleResource extends Resource
                 Forms\Components\Group::make()
                     ->schema([
                         Forms\Components\Section::make('Metadatos')
-                            ->description('Información de los datos')
+                            // ->description('Información de los datos')
                             ->icon('heroicon-s-information-circle')
                             ->schema([
                                 Forms\Components\Placeholder::make('created_at')
@@ -183,13 +297,14 @@ class SaleResource extends Resource
                     ->label('Fecha')
                     ->date()
                     ->searchable()
+                    ->columnSpan(1)
                     ->sortable(),
                 Tables\Columns\TextColumn::make('tipo_doc')
-                    ->label('Documento')
+                    ->label('Docto')
                     ->badge()
                     ->searchable()
                     ->sortable()
-                    ->alignCenter()
+                    ->columnSpan(1)
                     ->color(fn(string $state): string => match ($state) {
                         default => 'primary',
                         '33' => 'success',
@@ -198,24 +313,22 @@ class SaleResource extends Resource
                     })
                     ->formatStateUsing(function (Sale $docto, $state) {
                         $arreglo = collect(app(GeneralSettings::class)->codigos_dt)->pluck('min', 'code');
-                        return $arreglo[$state] . ' #' . $docto->folio;
+                        return $arreglo[$state] . ' N°' . $docto->folio;
                     }),
-
 
                 Tables\Columns\TextColumn::make('customer.nombre')
                     ->label('Cliente')
+                    ->icon('heroicon-o-rectangle-stack')
+                    ->placeholder('Sin asignar.')
+                    ->iconColor('gray')
+                    ->searchable()
+                    ->sortable(),
+
+                Tables\Columns\TextColumn::make('proyect.titulo')
+                    ->label('Proyecto')
+                    ->placeholder('Sin asignar.')
                     ->icon('heroicon-o-users')
                     ->iconColor('gray')
-                    ->tooltip(function (TextColumn $column): ?string {
-                        $state = $column->getState();
-                        if (\strlen($state) <= 30) {
-                            return null;
-                        }
-                        return $state;
-                    })
-                    ->copyable()
-                    ->numeric()
-                    ->limit(36)
                     ->searchable()
                     ->sortable(),
 
@@ -224,6 +337,7 @@ class SaleResource extends Resource
                     ->summarize(Sum::make()->money('clp', 1, 'es_CL')->label('Total'))
                     ->numeric()
                     ->currency('CLP')
+                    ->columnSpan(1)
                     ->searchable()
                     ->sortable(),
 
@@ -280,9 +394,10 @@ class SaleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListSales::route('/'),
-            'create' => Pages\CreateSale::route('/create'),
-            'edit' => Pages\EditSale::route('/{record}/edit'),
+            'index' => Pages\ManageSales::route('/'),
+            // 'create' => Pages\CreateSale::route('/create'),
+            // 'edit' => Pages\EditSale::route('/{record}/edit'),
+            'view' => Pages\ViewSale::route('/{record}'),
         ];
     }
 

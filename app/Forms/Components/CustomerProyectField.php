@@ -13,10 +13,13 @@ use Illuminate\Database\Eloquent\Model;
 
 use Filament\Forms\Components\Field;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\SpatieTagsInput;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Illuminate\Support\Collection;
 use Illuminate\Support\HtmlString;
+use Pelmered\FilamentMoneyField\Forms\Components\MoneyInput;
+use PhpParser\Node\Expr\Cast\Array_;
 
 class CustomerProyectField extends Field
 {
@@ -54,26 +57,45 @@ class CustomerProyectField extends Field
         return [
             Forms\Components\Section::make('Proyecto')
                 ->icon('heroicon-s-tag')
-                ->description('Datos de cliente y proyecto.')
+                // ->description('Datos de cliente y proyecto.')
                 ->columns(2)
                 ->schema([
                     // Forms\Components\Grid::make(2)
                     //     ->schema([
                     Forms\Components\Select::make('id_cliente')
                         ->label('Cliente')
+                        ->prefixIcon('heroicon-s-user')
                         ->required($this->isRequired())
                         ->options(Customer::query()->pluck('nombre', 'id'))
                         ->live()
+                        ->searchable()
                         ->hintAction(
                             Action::make('Ver cliente')
                                 ->url(fn($state) => $state > 0 ? CustomerResource::getUrl('view', ['record' => $state]) : null)
                                 ->openUrlInNewTab()
-                                ->icon('heroicon-s-user')
+                                ->icon('heroicon-s-link')
                         )
-                        ->searchable(),
+                        ->createOptionForm([
+                            Forms\Components\TextInput::make('nombre')
+                                ->required()
+                                ->columnSpan(2),
+                        ])
+                        ->createOptionUsing(function (array $data, Get $get) {
+                            $data['nombre'] = $get('nombre');
+                            $data['user_id'] = auth()->user()->id;
+                            if ($customer = Customer::create($data)) {
+                                return $customer->id;
+                            }
+                        })
+                        ->createOptionAction(function (Forms\Components\Actions\Action $action) {
+                            return $action
+                                ->modalHeading('Crear cliente')
+                                ->modalWidth('xl');
+                        }),
 
                     Forms\Components\Select::make('id')
                         ->label('Proyecto')
+                        ->prefixIcon('heroicon-s-rectangle-stack')
                         ->required($this->isRequired())
                         ->live()
                         ->hidden(fn(Get $get): Bool => $get('id_cliente') === null)
@@ -85,22 +107,24 @@ class CustomerProyectField extends Field
                             Action::make('Ver proyecto')
                                 ->url(fn($state) =>  $state ? ProyectResource::getUrl('view', ['record' => $state]) : null)
                                 ->openUrlInNewTab()
-                                ->icon('heroicon-s-rectangle-stack')
+                                ->icon('heroicon-s-link')
                         )
-                        ->createOptionForm(
-                            function (Form $form) {
+                        ->createOptionForm([
+                            Forms\Components\TextInput::make('titulo')
+                                ->required()
+                                ->columnSpan(2),
 
-                                ProyectResource::form($form);
-                            }
-                        )
-                        //     [
-                        //     Forms\Components\TextInput::make('titulo')
-                        //         ->required(),
-                        //     Forms\Components\TextInput::make('monto_proyectado')
-                        //         ->numeric()
-                        //         ->prefix('$')
-                        //         ->required(),
-                        // ])
+                            MoneyInput::make('monto_proyectado')
+                                ->required()
+                                ->columnSpan(1),
+
+                            SpatieTagsInput::make('tags')
+                                ->prefixIcon('heroicon-s-tag')
+                                ->type('proyectos')
+                                ->columnSpan(2),
+                            Forms\Components\RichEditor::make('detalle')
+                                ->columnSpan(2),
+                        ])
                         ->createOptionUsing(function (array $data, Get $get) {
                             $data['id_cliente'] = $get('id_cliente');
                             $data['user_id'] = auth()->user()->id;
@@ -111,7 +135,7 @@ class CustomerProyectField extends Field
                         ->createOptionAction(function (Forms\Components\Actions\Action $action) {
                             return $action
                                 ->modalHeading('Crear proyecto')
-                                ->modalWidth('md');
+                                ->modalWidth('xl');
                         }),
 
                     // ]),

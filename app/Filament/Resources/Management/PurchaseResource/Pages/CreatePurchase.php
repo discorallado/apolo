@@ -16,7 +16,7 @@ class CreatePurchase extends CreateRecord
 		$data['user_id'] = auth()->id();
 		$data['periodo'] = date('m', strtotime($data['fecha_dcto']));
 		$data['ano'] = date('y', strtotime($data['fecha_dcto']));
-			dd($data);
+		dd($data);
 		if ($data['id_cliente'] === null) {
 			$data['id_proyecto'] = null;
 		}

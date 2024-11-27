@@ -1,21 +1,22 @@
 <?php
 
-namespace App\Filament\Resources\Management\PurchaseResource\Pages;
+namespace App\Filament\Resources\Management\SaleResource\Pages;
 
-use App\Filament\Resources\Management\PurchaseResource;
+use App\Filament\Resources\Management\SaleResource;
+use App\Filament\Resources\Management\SaleResource\Widgets\SaleStatsWidget;
 use Filament\Actions;
-use Filament\Infolists\Infolist;
-use Filament\Resources\Pages\ViewRecord;
+use Filament\Resources\Pages\ManageRecords;
 
-class ViewPurchase extends ViewRecord
+class ManageSales extends ManageRecords
 {
-    protected static string $resource = PurchaseResource::class;
+    protected static string $resource = SaleResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make()
+            Actions\CreateAction::make()
                 ->mutateFormDataUsing(function (array $data): array {
+                    $data['user_id'] = auth()->id();
                     $data['total'] = (int)$data['total'];
                     if (filled($data['proyect_data']['id'])) {
                         $data['id_cliente'] = null;
@@ -24,8 +25,21 @@ class ViewPurchase extends ViewRecord
                         $data['id_cliente'] = $data['proyect_data']['id_cliente'];
                         $data['id_proyecto'] = null;
                     }
+
                     return $data;
                 }),
+        ];
+    }
+
+    public function getHeaderWidgetsColumns(): int | array
+    {
+        return 4;
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            SaleStatsWidget::class,
         ];
     }
 }
