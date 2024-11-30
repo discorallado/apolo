@@ -38,6 +38,9 @@ class Supplier extends Model implements HasMedia
 		'giro'
 	];
 
+	protected $casts = [
+		'supplier_files' => 'array',
+	];
 	public function getCiudadAttribute()
 	{
 		// dd(app(GeneralSettings::class));

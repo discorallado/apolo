@@ -32,21 +32,18 @@ class Purchase extends Model implements HasMedia
         'tipo_doc',
         'id_proyecto',
         'id_proveedor',
-        'centro_costo',
-        // 'forma_pago',
         'neto',
         'iva',
         'total',
         'user_id',
-        // 'periodo',
-        // 'ano',
     ];
 
+    protected $casts = [
+        'purchase_files' => 'array',
+    ];
 
     public function getDTOAttribute()
     {
-        // return strtoupper(app(GeneralSettings::class)->comunas[$this->id_ciudad]);
-        // return  strtoupper(GeneralSettings->comunas[(int)$this->ciudad]);
         $arreglo = collect(app(GeneralSettings::class)->codigos_dt)->pluck('label', 'code');
 
         return  strtoupper($arreglo[$this->tipo_doc]);

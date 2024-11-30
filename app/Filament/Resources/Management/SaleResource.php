@@ -2,19 +2,18 @@
 
 namespace App\Filament\Resources\Management;
 
+use App\Filament\Actions\AsignMovementAction;
 use App\Filament\Resources\Management\ProyectResource\RelationManagers\MovementsRelationManager;
 use App\Filament\Resources\Management\SaleResource\Pages;
 use App\Forms\Components\CustomerProyectField;
-use App\Models\Management\Proyect;
 use App\Models\Management\Sale;
 use App\Settings\GeneralSettings;
-use App\Tables\Columns\ProyectAsignColumn;
-use Carbon\Carbon;
-use Filament\Forms\Form;
 use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Infolists\Components\Actions\Action as ActionsAction;
+use Filament\Infolists\Components\Actions;
+use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
@@ -22,15 +21,13 @@ use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
-use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\Summarizers\Sum;
-use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Grouping\Group;
+use Filament\Tables\Table;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Pelmered\FilamentMoneyField\Forms\Components\MoneyInput;
 use Pelmered\FilamentMoneyField\Infolists\Components\MoneyEntry;
 
@@ -55,7 +52,7 @@ class SaleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-wallet';
 
-    public static function getRecordTitl(?Model $record): string|Htmlable|null
+    public static function getRecordTitle(?Model $record): string|Htmlable|null
     {
         return 'venta #' . $record?->folio . ' del ' . $record?->fecha_dcto;
     }
@@ -79,7 +76,7 @@ class SaleResource extends Resource
                                     ->formatStateUsing(fn(string $state): string => strtoupper($state))
                                     ->label('Cliente')
                                     ->hintAction(
-                                        ActionsAction::make('Ver cliente')
+                                        Action::make('Ver cliente')
                                             ->url(fn(?Model $record) => route('filament.apolo.resources.clientes.view', ['record' => $record->proyect->customer->id]))
                                             ->openUrlInNewTab()
                                             ->icon('heroicon-o-link')
@@ -89,14 +86,12 @@ class SaleResource extends Resource
                                     ->label('Proyecto')
                                     ->formatStateUsing(fn(string $state): string => strtoupper($state))
                                     ->hintAction(
-                                        ActionsAction::make('Ver proyecto')
+                                        Action::make('Ver proyecto')
                                             ->url(fn(?Model $record) => route('filament.apolo.resources.proyectos.view', ['record' => $record->proyect->id]))
                                             ->openUrlInNewTab()
                                             ->icon('heroicon-o-link')
                                     ),
                             ]),
-
-
                         Section::make('Detalles')
                             ->icon('heroicon-o-document-magnifying-glass')
                             ->description('Datos de identificación')
@@ -119,7 +114,6 @@ class SaleResource extends Resource
                                     ->columnSpan(1),
 
                             ]),
-
                         Section::make('Monto')
                             ->icon('heroicon-o-document-magnifying-glass')
                             ->columns(4)
@@ -138,18 +132,18 @@ class SaleResource extends Resource
                                     ->columnSpan(1),
                             ]),
 
-                        // Section::make('Archivos')
-                        //     ->icon('heroicon-s-paper-clip')
-                        //     // ->description('Documentos adjuntos.')
-                        //     ->schema([
-                        //         ViewEntry::make('purchase_files')
-                        //             ->label(false)
-                        //             ->view('infolists.components.files-entry')
-                        //             ->state(fn(Model $record) => $record->getMedia('compras'))
-                        //             ->columnSpanFull(),
-                        //     ])
-                        //     ->columns(3)
-                        //     ->columnSpan(2),
+                        Section::make('Archivos')
+                            ->icon('heroicon-s-paper-clip')
+                            // ->description('Documentos adjuntos.')
+                            ->schema([
+                                ViewEntry::make('sale_files')
+                                    ->label(false)
+                                    ->view('infolists.components.files-entry')
+                                    ->state(fn(Model $record) => $record->getMedia('ventas'))
+                                    ->columnSpanFull(),
+                            ])
+                            ->columns(3)
+                            ->columnSpan(2),
                     ]),
                 Grid::make(1)
                     ->columnSpan(1)
@@ -167,6 +161,30 @@ class SaleResource extends Resource
                                 TextEntry::make('user.name')
                                     ->formatStateUsing(fn(string $state): string => strtoupper($state))
                                     ->icon('heroicon-s-user'),
+                            ]),
+                        Section::make('Movimiento')
+                            ->icon('heroicon-s-arrows-right-left')
+                            ->schema([
+                                TextEntry::make('movement.id')
+                                    ->label('Movimiento')
+                                    ->label(false)
+                                    ->placeholder('Sin asignar'),
+
+                                Actions::make([
+                                    AsignMovementAction::make(),
+                                    Action::make('star')
+                                        ->icon('heroicon-m-star')
+                                        ->action(function (Model $record) {
+                                            dd($record);
+                                        }),
+                                    Action::make('resetStars')
+                                        ->icon('heroicon-m-x-mark')
+                                        ->color('danger')
+                                        ->requiresConfirmation()
+                                        ->action(function (Model $record) {
+                                            dd($record);
+                                        }),
+                                ]),
                             ])
                     ]),
             ]);
@@ -238,7 +256,7 @@ class SaleResource extends Resource
                                     ->columnSpan(1),
                             ]),
                     ])
-                    ->columnSpan(['lg' => fn(?Sale $record) => $record === null ? 3 : 2]),
+                    ->columnSpan(2),
 
                 Forms\Components\Group::make()
                     ->schema([

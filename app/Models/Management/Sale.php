@@ -41,6 +41,11 @@ class Sale extends Model implements HasMedia
         // 'periodo',
         // 'ano',
     ];
+
+    protected $casts = [
+        'sale_files' => 'array',
+    ];
+
     public function getDTOAttribute()
     {
         // return strtoupper(app(GeneralSettings::class)->comunas[$this->id_ciudad]);
@@ -67,6 +72,6 @@ class Sale extends Model implements HasMedia
 
     public function movement(): BelongsTo
     {
-        return $this->belongsTo(Customer::class, 'id_movimiento');
+        return $this->belongsTo(Movement::class, 'id_movimiento');
     }
 }

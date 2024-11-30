@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Management;
 use Closure;
 
 use App\Filament\Resources\Management\MovementResource\Pages;
+use App\Filament\Resources\Management\MovementResource\RelationManagers\SaleRelationManager;
 use App\Forms\Components\CustomerProyectField;
 use App\Models\Management\Customer;
 use App\Models\Management\Movement;
@@ -368,7 +369,7 @@ class MovementResource extends Resource
                             ->columnSpanFull(),
                     ]),
 
-                Forms\Components\Section::make('Anexos')
+                Forms\Components\Section::make('Archivos')
                     ->columns(2)
                     // ->collapsed()
                     // ->description('Información extra')
@@ -536,6 +537,14 @@ class MovementResource extends Resource
     {
         return [
             MovementResource\Widgets\MovimientosMesWidget::class,
+        ];
+    }
+
+    public static function getRelations(): array
+    {
+        // dd($this);
+        return [
+            // SaleRelationManager::class,
         ];
     }
     public static function getEloquentQuery(): Builder

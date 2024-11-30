@@ -22,7 +22,7 @@ class ManageBinnacles extends ManageRecords
     protected function getHeaderWidgets(): array
     {
         return [
-            BinnacleResource\Widgets\CalendarWidget::class,
+            BinnacleResource\Widgets\CalendarWidget2::class,
         ];
     }
 }

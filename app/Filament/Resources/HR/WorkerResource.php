@@ -13,6 +13,8 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\ActionSize;
+use Pelmered\FilamentMoneyField\Forms\Components\MoneyInput;
+use Pelmered\FilamentMoneyField\Tables\Columns\MoneyColumn;
 
 class WorkerResource extends Resource
 {
@@ -39,11 +41,12 @@ class WorkerResource extends Resource
                 Forms\Components\TextInput::make('nombre')
                     ->required()
                     ->maxLength(255),
-                Forms\Components\TextInput::make('valor_dia')
-                    ->prefixIcon('heroicon-o-currency-dollar')
+                MoneyInput::make('valor_dia')
+                    // ->prefixIcon('heroicon-o-currency-dollar')
                     ->required()
-                    ->numeric()
+                    // ->numeric()
                     ->maxLength(11),
+                Forms\Components\ColorPicker::make('color'),
                 Forms\Components\RichEditor::make('detalles')
                     ->maxLength(255)
                     ->default(null),
@@ -57,11 +60,15 @@ class WorkerResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('valor_dia')
-                    ->money('CLP', 0, 'cl')
+                Tables\Columns\TextColumn::make('initials')
+                    ->label('Iniciales')
                     ->searchable(),
+                Tables\Columns\ColorColumn::make('color'),
                 Tables\Columns\TextColumn::make('detalles')
                     ->placeholder('Sin detalles.')
+                    ->limit(30)
+                    ->searchable(),
+                MoneyColumn::make('valor_dia')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
@@ -80,25 +87,10 @@ class WorkerResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->button()
-
-                    ->size(ActionSize::ExtraSmall)
-                    ->button()
-
-                    ->size(ActionSize::ExtraSmall),
-                Tables\Actions\DeleteAction::make()
-                    ->button()
-
-                    ->size(ActionSize::ExtraSmall),
-                Tables\Actions\ForceDeleteAction::make()
-                    ->button()
-
-                    ->size(ActionSize::ExtraSmall),
-                Tables\Actions\RestoreAction::make()
-                    ->button()
-
-                    ->size(ActionSize::ExtraSmall),
+                Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\ForceDeleteAction::make(),
+                Tables\Actions\RestoreAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

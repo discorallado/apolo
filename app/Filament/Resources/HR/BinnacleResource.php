@@ -16,6 +16,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\ActionSize;
+use Pelmered\FilamentMoneyField\Tables\Columns\MoneyColumn;
 
 class BinnacleResource extends Resource
 {
@@ -72,8 +73,10 @@ class BinnacleResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('title')
                     ->label('Días trabajados')
+                    ->placeholder('Sin registro.')
                     ->sortable(),
                 // Tables\Columns\TextColumn::make('starts_at')
+
                 //     ->label('Inicio')
                 //     ->date()
                 //     ->sortable(),
@@ -83,15 +86,17 @@ class BinnacleResource extends Resource
                 //     ->sortable(),
                 Tables\Columns\TextColumn::make('dias')
                     ->label('Cantidad')
+                    ->placeholder('Sin registro.')
                     ->suffix(' día/s')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('valor_dia')
+                MoneyColumn::make('valor_dia')
                     ->label('Valor')
-                    ->money('CLP', 0, 'cl')
+                    ->placeholder('Sin registro.')
+                    // ->money('CLP', 0, 'cl')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('total_dias')
+                MoneyColumn::make('total_dias')
                     ->label('Total')
-                    ->money('CLP', 0, 'cl')
+                    // ->money('CLP', 0, 'cl')
                     ->sortable(),
                 // Tables\Columns\TextColumn::make('payments_sum_monto')
                 //     ->sum('payments', 'monto')
@@ -141,6 +146,7 @@ class BinnacleResource extends Resource
     {
         return [
             'index' => Pages\ManageBinnacles::route('/'),
+            'calendar' => Pages\Calendar::route('/calendar'),
         ];
     }
 
@@ -155,7 +161,7 @@ class BinnacleResource extends Resource
     public static function getWidgets(): array
     {
         return [
-            BinnacleResource\Widgets\CalendarWidget::class,
+            BinnacleResource\Widgets\CalendarWidget2::class,
         ];
     }
 }

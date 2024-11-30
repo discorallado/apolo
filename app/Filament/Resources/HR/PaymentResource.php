@@ -81,6 +81,7 @@ class PaymentResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('binnacle.title')
                     ->label('Días pagados')
+                    ->placeholder('Sin registro.')
                     ->sortable(),
                 // Tables\Columns\TextColumn::make('id')
                 //     ->formatStateUsing(fn(string $state): string => Payment::where('id_bitacora', '=', $state)->count()),
@@ -89,6 +90,7 @@ class PaymentResource extends Resource
                 //     ->sortable(),
                 Tables\Columns\TextColumn::make('binnacle.worker.nombre')
                     ->label('Trabajador')
+                    ->placeholder('Sin registro.')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('monto')

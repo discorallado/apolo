@@ -37,10 +37,12 @@ class Customer extends Model implements HasMedia
         'user_id'
     ];
 
+    protected $casts = [
+        'customer_files' => 'array',
+    ];
+
     public function getCiudadAttribute()
     {
-        // return strtoupper(app(GeneralSettings::class)->comunas[$this->id_ciudad]);
-        // return  strtoupper(GeneralSettings->comunas[(int)$this->ciudad]);
         return  strtoupper(app(GeneralSettings::class)->comunas[$this->id_ciudad]);
     }
 

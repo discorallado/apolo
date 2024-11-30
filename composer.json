@@ -22,6 +22,7 @@
         "filament/spatie-laravel-translatable-plugin": "^3.0",
         "flowframe/laravel-trend": "^0.1.1",
         "freshwork/chilean-bundle": "^2.1",
+        "guava/calendar": "^1.10",
         "guzzlehttp/guzzle": "^7.2",
         "ibrahim-bougaoua/filaprogress": "^0.1.0",
         "itsgoingd/clockwork": "^5.1",

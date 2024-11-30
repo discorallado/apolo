@@ -270,7 +270,7 @@ class PurchaseResource extends Resource
                             ]),
                         Forms\Components\Section::make('Archivos')
                             ->icon('heroicon-o-paper-clip')
-                            ->collapsed()
+                            // ->collapsed()
                             // ->description('Archivos adjuntos.')
                             ->schema([
                                 SpatieMediaLibraryFileUpload::make('purchase_files')
