@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\View;
 use Illuminate\Support\HtmlString;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -34,16 +35,16 @@ class AppServiceProvider extends ServiceProvider
             $settings = app(GeneralSettings::class);
             $view->with('generalSettings', collect($settings));
         });
-
-        FilamentView::registerRenderHook(
-            'panels::scripts.after',
-            fn(): string => Blade::render("
-        <script>
-            if(localStorage.getItem('theme') === null) {
-                localStorage.setItem('theme', 'dark')
-            }
-        </script>"),
-        );
+        URL::forceScheme('https');
+        // FilamentView::registerRenderHook(
+        //     'panels::scripts.after',
+        //     fn(): string => Blade::render("
+        // <script>
+        //     if(localStorage.getItem('theme') === null) {
+        //         localStorage.setItem('theme', 'dark')
+        //     }
+        // </script>"),
+        // );
         // FilamentAsset::register([
         //     Js::make('main', __DIR__ . '/../../resources/js/main.js'),
         // ]);

@@ -53,17 +53,21 @@ class Movement extends Model implements HasMedia
         // 'publisher_id',
     ];
 
-    // public function getTituloAttribute($value)
-    // {
-    //     if (!isset($this->relations['proyect'])) {
-    //         $this->load('proyect');
-    //     }
-    //     $cliente = $this->proyect()->first();
-    //     // dd($cliente->first()->nombre);
-    //     return strtoupper($this->titulo) . ' - ' . strtoupper($cliente->first()->nombre);
-    //     return $value;
-    // }
+    public function getTituloAttribute($value)
+    {
+        if (!isset($this->relations['proyect'])) {
+            $this->load('proyect');
+        }
+        $proyecto = $this->proyect()->first();
+        // dd($cliente->first()->nombre);
+        return '[' . strtoupper($this->tipo) . '] del ' . $this->fecha . ' ' . strtoupper($proyecto->titulo) . ' - ' . strtoupper($proyecto->customer->nombre);
+        // return $value;
+    }
 
+    public function setTipoAttribute($value)
+    {
+        return strtoupper($value);
+    }
     public function getDetalleAttribute($value)
     {
         return strtoupper($value);

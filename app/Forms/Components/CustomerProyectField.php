@@ -25,7 +25,7 @@ class CustomerProyectField extends Field
 {
     protected string $view = 'forms.components.customer-proyect-field';
 
-    public $relationship = null;
+    public $relationship = 'proyect';
 
     public function relationship(string | callable $relationship): static
     {
@@ -34,6 +34,37 @@ class CustomerProyectField extends Field
         return $this;
     }
 
+    public function readOnly(): bool
+    {
+        return false;
+    }
+
+    public function getRelationship(): string
+    {
+        // return $this->evaluate($this->relationship) ?? $this->getName();
+        return $this->evaluate($this->relationship) ?? false;
+    }
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->afterStateHydrated(function (CustomerProyectField $component, ?Model $record) {
+            // dd($this->getRelationship());
+            // $proyect = $record?->getRelationValue($this->getRelationship())->toArray();
+            $proyect = filled($record->proyect) ? $record->proyect->id : null;
+            $customer = filled($record->customer) ? $record->customer->id : (filled($record->proyect) ? $record->proyect->customer->id : null);
+
+            // dd($proyect);
+            // $array_proyecto = $proyect?->toArray();
+            // dd($component->getState());
+            $component->state([
+                'id' => $proyect,
+                'id_cliente' => $customer
+            ]);
+            // dd($component);
+        });
+
+        // $this->dehydrated(false);
+    }
     // public function saveRelationships(): void
     // {
     //     $state = $this->getState();
@@ -71,7 +102,7 @@ class CustomerProyectField extends Field
                         ->searchable()
                         ->hintAction(
                             Action::make('Ver cliente')
-                                ->url(fn($state) => $state > 0 ? CustomerResource::getUrl('view', ['record' => $state]) : null)
+                                ->url(fn($state) => filled($state) ? CustomerResource::getUrl('view', ['record' => $state]) : null)
                                 ->openUrlInNewTab()
                                 ->icon('heroicon-s-link')
                         )
@@ -96,16 +127,15 @@ class CustomerProyectField extends Field
                     Forms\Components\Select::make('id')
                         ->label('Proyecto')
                         ->prefixIcon('heroicon-s-rectangle-stack')
-                        ->required($this->isRequired())
                         ->live()
-                        ->hidden(fn(Get $get): Bool => $get('id_cliente') === null)
+                        ->hidden(fn(Get $get): Bool => blank($get('id_cliente')))
                         ->options(fn(Get $get): Collection => Proyect::query()
                             ->where('id_cliente', $get('id_cliente'))
                             ->pluck('titulo', 'id'))
                         ->searchable()
                         ->hintAction(
                             Action::make('Ver proyecto')
-                                ->url(fn($state) =>  $state ? ProyectResource::getUrl('view', ['record' => $state]) : null)
+                                ->url(fn($state) =>  filled($state) ? ProyectResource::getUrl('view', ['record' => $state]) : null)
                                 ->openUrlInNewTab()
                                 ->icon('heroicon-s-link')
                         )
@@ -141,34 +171,5 @@ class CustomerProyectField extends Field
                     // ]),
                 ])
         ];
-    }
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->afterStateHydrated(function (CustomerProyectField $component, ?Model $record) {
-            $proyect = $record?->getRelationValue($this->getRelationship());
-            $array_proyecto = $proyect?->toArray();
-            $component->state($array_proyecto ? [
-                'id' => $array_proyecto['id'],
-                'id_cliente' => $array_proyecto['id_cliente'],
-            ] : [
-                'id' => null,
-                'id_cliente' => null,
-            ]);
-            // dd($component);
-        });
-
-        // $this->dehydrated(false);
-    }
-
-
-    public function readOnly(): bool
-    {
-        return false;
-    }
-    public function getRelationship(): string
-    {
-        return $this->evaluate($this->relationship) ?? $this->getName();
     }
 }

@@ -117,6 +117,11 @@ class MovementResource extends Resource
                                             ->label('Nro. factura')
                                             ->placeholder('Sin factura.')
                                             ->prefix('N° '),
+                                        // TextEntry::make('titulo')
+                                        //     ->icon('heroicon-s-receipt-percent')
+                                        //     ->label('Nro. factura')
+                                        //     ->placeholder('Sin factura.')
+                                        //     ->prefix('N° '),
                                     ]),
                                 TextEntry::make('detalle')
                                     ->placeholder('Sin detalles.')

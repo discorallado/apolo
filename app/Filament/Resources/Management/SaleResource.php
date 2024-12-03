@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\Management;
 
-use App\Filament\Actions\AsignMovementAction;
 use App\Filament\Resources\Management\ProyectResource\RelationManagers\MovementsRelationManager;
 use App\Filament\Resources\Management\SaleResource\Pages;
 use App\Forms\Components\CustomerProyectField;
@@ -12,14 +11,15 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
 use Filament\Forms\Set;
-use Filament\Infolists\Components\Actions;
 use Filament\Infolists\Components\Actions\Action;
+use Filament\Infolists\Components\Fieldset;
 use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
+use Filament\Support\Enums\IconPosition;
 use Filament\Tables;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Grouping\Group;
@@ -28,12 +28,13 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Livewire\Attributes\On;
+use Livewire\Component;
 use Pelmered\FilamentMoneyField\Forms\Components\MoneyInput;
 use Pelmered\FilamentMoneyField\Infolists\Components\MoneyEntry;
 
 class SaleResource extends Resource
 {
-
     protected static ?string $model = Sale::class;
 
     protected static ?int $navigationSort = 4;
@@ -52,6 +53,15 @@ class SaleResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-wallet';
 
+    // protected $listeners = ['reRenderParent'];
+
+    // #[On('reRenderParent')]
+    // public function reRenderParent()
+    // {
+    //     dd($this->mount());
+    //     // $this->render();
+    // }
+
     public static function getRecordTitle(?Model $record): string|Htmlable|null
     {
         return 'venta #' . $record?->folio . ' del ' . $record?->fecha_dcto;
@@ -66,43 +76,15 @@ class SaleResource extends Resource
                     ->columnSpan(2)
                     ->schema([
                         Section::make('Detalles')
-                            ->columns(2)
-                            ->icon('heroicon-o-arrows-right-left')
-                            ->description('Detalles del movimiento')
-                            ->schema([
-                                TextEntry::make('proyect.customer.nombre')
-                                    ->icon('heroicon-s-user')
-                                    ->columnSpan(1)
-                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
-                                    ->label('Cliente')
-                                    ->hintAction(
-                                        Action::make('Ver cliente')
-                                            ->url(fn(?Model $record) => route('filament.apolo.resources.clientes.view', ['record' => $record->proyect->customer->id]))
-                                            ->openUrlInNewTab()
-                                            ->icon('heroicon-o-link')
-                                    ),
-                                TextEntry::make('proyect.titulo')
-                                    ->icon('heroicon-s-rectangle-stack')
-                                    ->label('Proyecto')
-                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
-                                    ->hintAction(
-                                        Action::make('Ver proyecto')
-                                            ->url(fn(?Model $record) => route('filament.apolo.resources.proyectos.view', ['record' => $record->proyect->id]))
-                                            ->openUrlInNewTab()
-                                            ->icon('heroicon-o-link')
-                                    ),
-                            ]),
-                        Section::make('Detalles')
                             ->icon('heroicon-o-document-magnifying-glass')
-                            ->description('Datos de identificación')
-                            ->columns(2)
+                            ->description('Detalles del movimiento')
+                            ->columns(3)
                             ->columnSpan(2)
                             ->schema([
                                 TextEntry::make('folio')
                                     ->icon('heroicon-s-hashtag')
                                     ->placeholder('sin registro.')
-                                    ->prefix('N° ')
-                                    ->columnSpan(1),
+                                    ->prefix('N° '),
                                 TextEntry::make('fecha_dcto')
                                     ->icon('heroicon-s-calendar-days')
                                     ->placeholder('sin registro.')
@@ -112,7 +94,6 @@ class SaleResource extends Resource
                                     ->icon('heroicon-s-document')
                                     ->placeholder('sin registro.')
                                     ->columnSpan(1),
-
                             ]),
                         Section::make('Monto')
                             ->icon('heroicon-o-document-magnifying-glass')
@@ -131,19 +112,136 @@ class SaleResource extends Resource
                                     ->placeholder('sin registro.')
                                     ->columnSpan(1),
                             ]),
-
-                        Section::make('Archivos')
-                            ->icon('heroicon-s-paper-clip')
-                            // ->description('Documentos adjuntos.')
-                            ->schema([
-                                ViewEntry::make('sale_files')
-                                    ->label(false)
-                                    ->view('infolists.components.files-entry')
-                                    ->state(fn(Model $record) => $record->getMedia('ventas'))
-                                    ->columnSpanFull(),
+                        Section::make('Cliente')
+                            ->columns(2)
+                            ->icon('heroicon-o-arrows-right-left')
+                            ->headerActions([
+                                Action::make('Asignar')
+                                    ->icon('heroicon-s-archive-box-arrow-down')
+                                    ->iconPosition(IconPosition::After)
+                                    ->color('purple')
+                                    ->form([
+                                        CustomerProyectField::make('proyect_data')
+                                            ->required()
+                                            ->label(false)
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->action(function (array $data, Model $record): void {
+                                        if (filled($data['proyect_data']['id'])) {
+                                            $record->id_cliente = null;
+                                            $record->id_proyecto = $data['proyect_data']['id'];
+                                        } else {
+                                            $record->id_cliente = $data['proyect_data']['id_cliente'];
+                                            $record->id_proyecto = null;
+                                        }
+                                        $record->save();
+                                    })
+                                    ->after(function (?Model $record) {
+                                        // $livewire->dispatch('reRenderParent');
+                                        return redirect()->route('filament.apolo.resources.ventas.view', ['record' => $record->id]);
+                                    }),
+                                Action::make('Quitar')
+                                    ->icon('heroicon-s-archive-box-x-mark')
+                                    ->iconPosition(IconPosition::After)
+                                    ->color('warning')
+                                    ->hidden(fn(?Model $record): bool => blank($record->customer) && blank($record->proyect))
+                                    ->action(function (array $data, Model $record): void {
+                                        $record->id_cliente = null;
+                                        $record->id_proyecto = null;
+                                        $record->save();
+                                    })
+                                    ->after(function (?Model $record) {
+                                        return redirect()->route('filament.apolo.resources.ventas.view', ['record' => $record->id]);
+                                    }),
                             ])
-                            ->columns(3)
-                            ->columnSpan(2),
+                            ->schema([
+                                TextEntry::make('customer.nombre')
+                                    ->placeholder('Sin asignar.')
+                                    ->icon('heroicon-s-user')
+                                    ->columnSpan(1)
+                                    ->state(fn(?Model $record): string => $record->proyect->customer->nombre ?? ($record->customer->nombre ?? ''))
+                                    ->label('Cliente')
+                                    ->hintAction(
+                                        Action::make('Ver cliente')
+                                            ->hidden(fn(?Model $record): bool => blank($record->customer) && blank($record->proyect))
+                                            ->url(fn(?Model $record) => route('filament.apolo.resources.clientes.view', ['record' => $record->proyect->customer->id ?? $record->customer->id]))
+                                            ->openUrlInNewTab()
+                                            ->icon('heroicon-o-link')
+                                    ),
+                                TextEntry::make('proyect.titulo')
+                                    ->placeholder('Sin asignar.')
+                                    ->icon('heroicon-s-rectangle-stack')
+                                    ->label('Proyecto')
+                                    ->formatStateUsing(fn(string $state): string => strtoupper($state))
+                                    ->hintAction(
+                                        Action::make('Ver proyecto')
+                                            ->hidden(fn(?Model $record): bool => blank($record->proyect))
+                                            ->url(fn(?Model $record) => route('filament.apolo.resources.proyectos.view', ['record' => $record->proyect->id]))
+                                            ->openUrlInNewTab()
+                                            ->icon('heroicon-o-link')
+                                    ),
+                                Fieldset::make('Resumen del Proyecto')
+                                    ->hidden(fn(?Model $record): bool => !filled($record->proyect))
+                                    ->columns(4)
+                                    ->schema([
+                                        MoneyEntry::make('monto_proyectado')
+                                            ->state(function (Model $record): float {
+                                                return $record->proyect->monto_proyectado;
+                                            }),
+                                        MoneyEntry::make('cargos')
+                                            ->state(function (Model $record): float {
+                                                return $record->proyect->movements->sum('cargo');
+                                            }),
+
+                                        MoneyEntry::make('ingresos')
+                                            ->state(function (Model $record): float {
+                                                return $record->proyect->movements->sum('ingreso');
+                                            }),
+                                        MoneyEntry::make('deuda')
+                                            ->state(function (Model $record): float {
+                                                return $record->proyect->movements->sum('cargo') - $record->proyect->movements->sum('ingreso');
+                                            }),
+                                        Grid::make(2)
+                                            ->schema([
+                                                TextEntry::make('sales')
+                                                    ->label('Facturas emitidas')
+                                                    ->state(function (Model $record): float {
+                                                        return $record->proyect->sales->count();
+                                                    })
+                                                    ->suffix(fn($state): string => ($state == 1) ? ' factura' : ' facturas'),
+                                                TextEntry::make('purchases')
+                                                    ->label('Facturas de compras')
+                                                    ->state(function (Model $record): float {
+                                                        return $record->proyect->purchases->count();
+                                                    })
+                                                    ->suffix(fn($state): string => ($state == 1) ? ' factura' : ' facturas'),
+                                            ])
+                                    ]),
+                            ]),
+                        Section::make('Movimiento')
+                            ->icon('heroicon-s-arrows-right-left')
+                            ->columns(4)
+                            ->schema([
+                                TextEntry::make('movement.fecha')
+                                    ->label('Fecha')
+                                    // ->label(false)
+                                    ->placeholder('Sin asignar'),
+                                TextEntry::make('movement.tipo')
+                                    ->label('Tpo')
+                                    // ->label(false)
+                                    ->placeholder('Sin asignar'),
+                                // Grid::make(2)
+                                //     ->schema([
+                                MoneyEntry::make('movement.cargo')
+                                    ->label('Cargo')
+                                    // ->label(false)
+                                    ->placeholder('Sin asignar'),
+                                MoneyEntry::make('movement.ingreso')
+                                    ->label('Ingreso')
+                                    // ->label(false)
+                                    ->placeholder('Sin asignar'),
+                                // ]),
+                            ])
                     ]),
                 Grid::make(1)
                     ->columnSpan(1)
@@ -162,30 +260,17 @@ class SaleResource extends Resource
                                     ->formatStateUsing(fn(string $state): string => strtoupper($state))
                                     ->icon('heroicon-s-user'),
                             ]),
-                        Section::make('Movimiento')
-                            ->icon('heroicon-s-arrows-right-left')
+                        Section::make('Archivos')
+                            ->icon('heroicon-s-paper-clip')
+                            // ->description('Documentos adjuntos.')
                             ->schema([
-                                TextEntry::make('movement.id')
-                                    ->label('Movimiento')
+                                ViewEntry::make('sale_files')
                                     ->label(false)
-                                    ->placeholder('Sin asignar'),
+                                    ->view('infolists.components.files-entry')
+                                    ->state(fn(Model $record) => $record->getMedia('ventas'))
+                            ]),
 
-                                Actions::make([
-                                    AsignMovementAction::make(),
-                                    Action::make('star')
-                                        ->icon('heroicon-m-star')
-                                        ->action(function (Model $record) {
-                                            dd($record);
-                                        }),
-                                    Action::make('resetStars')
-                                        ->icon('heroicon-m-x-mark')
-                                        ->color('danger')
-                                        ->requiresConfirmation()
-                                        ->action(function (Model $record) {
-                                            dd($record);
-                                        }),
-                                ]),
-                            ])
+
                     ]),
             ]);
     }
@@ -196,7 +281,6 @@ class SaleResource extends Resource
             ->schema([
                 Forms\Components\Group::make()
                     ->schema([
-
                         CustomerProyectField::make('proyect_data')
                             ->relationship('proyect')
                             ->label(false)
@@ -339,6 +423,7 @@ class SaleResource extends Resource
                     ->icon('heroicon-o-rectangle-stack')
                     ->placeholder('Sin asignar.')
                     ->iconColor('gray')
+                    ->state(fn(?Model $record): string => filled($record->proyect) ? $record->proyect->customer->nombre : (filled($record->customer) ? $record->customer->nombre : null))
                     ->searchable()
                     ->sortable(),
 
@@ -398,7 +483,7 @@ class SaleResource extends Resource
             ])
 
             ->emptyStateActions([
-                Tables\Actions\CreateAction::make(),
+                // Tables\Actions\CreateAction::make(),
             ]);
     }
 

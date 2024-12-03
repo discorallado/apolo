@@ -6,6 +6,7 @@ use App\Filament\Resources\Management\SaleResource;
 use Filament\Actions;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
+use Livewire\Attributes\On;
 
 class ViewSale extends ViewRecord
 {
